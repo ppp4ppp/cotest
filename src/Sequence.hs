@@ -4,6 +4,10 @@ import Control.Monad
 
 data Sequence a = End a | Next (Sequence a) deriving (Show)
 
+class SequenceMonad a where
+  seqm :: Int -> a -> Sequence a
+
+
 msqs ::
   Int ->
   a ->
@@ -23,3 +27,9 @@ instance Applicative Sequence where
   (<*>) (End fa) (Next a) = (End fa) <*> a
   (<*>) (Next fa) (End a) = fa <*> (End a)
   (<*>) (End fa) (End a) = End (fa a)
+
+instance Monad Sequence where
+  return  = pure
+  (End a) >>= f = f a
+  (Next s) >>= f = s >>= f
+
