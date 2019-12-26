@@ -1,17 +1,28 @@
+{-#LANGUAGE MultiParamTypeClasses #-}
+
 module Stream where
 
 import Control.Comonad
+import Data.Functor.Identity
 
 data Stream a = Cons a (Stream a)
 
-class StreamComonad a where
-  stream :: a -> Stream a
 
-instance StreamComonad Int where
-  stream v = unflds v (+ 1)
+-- next :: StreamComonad w => w a -> w a
+-- next = undefined
+
+class (Comonad w) => StreamComonad w where
+  stream :: a -> (a -> a) -> w a
+  next :: w a -> w a
+
+
+instance StreamComonad Stream where
+  stream v f = unflds v f
+  next (Cons _ s) = s
+
+  
 
 unflds ::
-  (Show a) =>
   a ->
   (a -> a) ->
   Stream a

@@ -1,11 +1,17 @@
+{-#LANGUAGE MultiParamTypeClasses #-}
+
 module Sequence where
 
 import Control.Monad
 
 data Sequence a = End a | Next (Sequence a) deriving (Show)
 
-class SequenceMonad a where
-  seqm :: Int -> a -> Sequence a
+class SequenceMonad w where
+  seqm :: Int -> a -> w a
+  
+instance SequenceMonad Sequence where
+  seqm 0 v = End v
+  seqm n v = Next (seqm (n - 1) v)
 
 
 msqs ::
