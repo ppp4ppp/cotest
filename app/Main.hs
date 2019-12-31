@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE RankNTypes #-}
 
 module Main where
 
@@ -11,6 +12,7 @@ import Control.Comonad
 import Control.Comonad.Store
 import Control.Monad
 import Data.Either
+import Data.Function ((&))
 import Data.Functor.Day
 import Data.Functor.Identity
 import Data.IORef
@@ -18,6 +20,9 @@ import Data.Map
 import Lib
 import Sequence
 import Stream
+import Data.Profunctor.Strong
+import Data.Profunctor
+
 
 main :: IO ()
 main = someFunc
@@ -73,7 +78,7 @@ liftLeft (Co cow) =  Co $ \ (Day wa wb f) -> undefined
 liftRight :: Co w2 () -> Co (Day w1 w2) ()
 liftRight c = undefined
 
-
+{-
 --------------------------------------------------------
 class Contravar f where
   contrmap :: (b -> a) -> f a -> f b
@@ -144,4 +149,25 @@ instance Indexable i (->) where
 
 mapIndexable :: Indexable i p => p a b -> Map i a -> Map i b
 mapIndexable = mapWithKey . indexed
+-}
 
+type Optical p ta tb a b = p a b -> p ta tb
+
+type Lens ta tb a b = forall p. Strong p => Optical p ta tb a b
+type Lens' ta a = Lens ta ta a a
+
+-- the generator:
+
+lens :: (ta -> a)  {- component selection -}
+     -> (b -> ta -> tb) {- structure transf. with component image -}
+     -> Lens ta tb a b
+lens getter setter = lensStructFromPair . first'
+   where
+      -- lensStructFromPair :: Profunctor p 
+         --                => p (a, ta) (b, ta) 
+           --              -> p ta tb
+      lensStructFromPair = dimap (getter &&& id) (uncurry setter)
+
+_1 :: Lens' (a, b, c) a
+_1 = lens ( \ (a , b, c) -> a ) 
+           ( \ v (a, b, c) -> (v, b, c) )

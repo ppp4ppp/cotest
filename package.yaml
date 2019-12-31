@@ -24,6 +24,7 @@ dependencies:
 - comonad
 - kan-extensions
 - containers
+- profunctors
 
 library:
   source-dirs: src
