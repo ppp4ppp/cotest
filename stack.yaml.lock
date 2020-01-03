@@ -3,7 +3,14 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/lock_files
 
-packages: []
+packages:
+- completed:
+    hackage: mezzolens-0.0.0@sha256:da3a9df86229e3667c22e1c85a639a3aeb4034bb188831287531f9cd033bcb17,1421
+    pantry-tree:
+      size: 791
+      sha256: b2ed08e707238bf4fd582a8e09d743f3ec4d6c6f6b39aa347dc0e5ff1b31a187
+  original:
+    hackage: mezzolens-0.0.0@sha256:da3a9df86229e3667c22e1c85a639a3aeb4034bb188831287531f9cd033bcb17,1421
 snapshots:
 - completed:
     size: 499193

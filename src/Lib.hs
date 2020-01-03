@@ -26,3 +26,7 @@ instance (Comonad w) => Monad (Co w) where
   (Co ma) >>= f = Co $ \ w -> ma ( w =>> ( \ wb -> \ a -> runCo (f a) wb ) )
   
   
+data Sum f g a = Sum Bool (f a) (g a)
+
+instance Functor (Sum f g) where
+

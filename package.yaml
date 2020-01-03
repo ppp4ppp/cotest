@@ -25,6 +25,8 @@ dependencies:
 - kan-extensions
 - containers
 - profunctors
+- mtl
+- mezzolens
 
 library:
   source-dirs: src

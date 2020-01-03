@@ -4,13 +4,16 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Main where
 
 import Control.Arrow
 import Control.Comonad
 import Control.Comonad.Store
+import Control.Monad.State
 import Control.Monad
+
 import Data.Either
 import Data.Function ((&))
 import Data.Functor.Day
@@ -20,16 +23,33 @@ import Data.Map
 import Lib
 import Sequence
 import Stream
-import Data.Profunctor.Strong
-import Data.Profunctor
-
+import Mezzolens
+import Mezzolens.Optics
+import Mezzolens.Profunctor
 
 main :: IO ()
 main = someFunc
 
+
 instance (StreamComonad w) => SequenceMonad (Co w) where
   seqm 0 a = Co $ \w -> (extract w) a
   seqm n a = Co $ \w -> ((runCo (seqm (n - 1) a)) . next) w
+
+instance (ComonadStore s w) => MonadState s (Co w) where
+  state f = Co $ \ w -> case f (pos w) of
+                          (a , s) -> peek s w a
+
+  -- state = undefined
+
+c1 :: Component (Store Int)
+c1 = store render 10 where
+    render s send = do
+      print "test"
+      print s
+      getLine
+      send (modify' (+1))
+
+
 
 -- handler
 -- component
@@ -72,11 +92,45 @@ combine comp1 comp2 = Day comp1 comp2 build
     -- build :: UI w1 -> UI w2 -> UI w
     build a b = (\h -> (a (h . liftLeft)) <> (b (h . liftRight)) )
 
-liftLeft :: Co w1 () -> Co (Day w1 w2) ()
-liftLeft (Co cow) =  Co $ \ (Day wa wb f) -> undefined
+liftLeft :: (Comonad w1, Comonad w2) => Co w1 () -> Co (Day w1 w2) ()       -- w1 ( a -> r )
+liftLeft (Co cow) = Co $ \ (Day wa wb f) -> cow ( wa =>> ( \ wf -> f (extract wf) (extract wb) ))
 
-liftRight :: Co w2 () -> Co (Day w1 w2) ()
-liftRight c = undefined
+liftRight :: (Comonad w1, Comonad w2) => Co w2 () -> Co (Day w1 w2) ()
+liftRight (Co cow) = Co $ \ (Day wa wb f) -> cow ( wb =>> ( \ wf -> f (extract wa) (extract wf) ))
+
+
+
+class (Profunctor p) => Convoluted p where
+  convoluted :: (Comonad f, Comonad g, Comonad w)
+             => p (f a) (g b)
+             -> p (Day f w a) (Day g w b)
+
+instance Convoluted (->) where
+  convoluted pab = undefined
+
+s4 :: StoreT Int w ()
+s4 = undefined
+
+sp :: Store Int () -> Store Int ()
+sp w = w =>> peeks (+1)
+
+type Blur s t a b = forall p. Convoluted p  => p a b -> p s t
+
+stored :: (Comonad w) => Blur (StoreT s w a) (StoreT t w a) (StoreT s Identity a) (StoreT t Identity a)
+stored pab = dimap t2 t1 (convoluted pab) where
+  t1 :: Day (StoreT t Identity) w a -> StoreT t w a
+  t1 = undefined
+
+  t2 :: StoreT s w a -> Day (StoreT s Identity) w a
+  t2 = undefined
+  
+
+
+
+
+
+
+  --convoluted = undefined
 
 {-
 --------------------------------------------------------
@@ -120,7 +174,8 @@ class Profunctor f where
   dimap :: (c -> a) -> (b -> d) -> f a b -> f c d
 
 instance Profunctor (->) where
-  dimap g f a = f . a . g
+  dimap g h f = h . f . g
+
 
 type Limits a = Limits' a a
 
@@ -149,25 +204,42 @@ instance Indexable i (->) where
 
 mapIndexable :: Indexable i p => p a b -> Map i a -> Map i b
 mapIndexable = mapWithKey . indexed
--}
+
+
+class (Profunctor p) => Strong p where
+  _1 :: p a b -> p (a, c) (b, c)
+  _2 :: p a b -> p (c, a) (c, b)
+
+class Profunctor p => Choice p where
+  _Left :: p a b -> p (Either a c) (Either b c)
+  _Right :: p a b -> p (Either c a) (Either c b)
+
+instance Strong (->) where
+  _1 f = ( \ (a, c) -> (f a, c) )
+  _2 f = fmap f 
+
+instance Choice (->) where
+  _Left f = either (Left . f) Right
+  _Right f = either Left (Right . f)
 
 type Optical p ta tb a b = p a b -> p ta tb
 
 type Lens ta tb a b = forall p. Strong p => Optical p ta tb a b
+
 type Lens' ta a = Lens ta ta a a
 
--- the generator:
+type Prism ta tb a b = forall p. Choice p => Optical p ta tb a b
 
-lens :: (ta -> a)  {- component selection -}
-     -> (b -> ta -> tb) {- structure transf. with component image -}
-     -> Lens ta tb a b
-lens getter setter = lensStructFromPair . first'
-   where
-      -- lensStructFromPair :: Profunctor p 
-         --                => p (a, ta) (b, ta) 
-           --              -> p ta tb
-      lensStructFromPair = dimap (getter &&& id) (uncurry setter)
+type Prism' ta a = Prism ta ta a a
 
-_1 :: Lens' (a, b, c) a
-_1 = lens ( \ (a , b, c) -> a ) 
-           ( \ v (a, b, c) -> (v, b, c) )
+lens :: (ta -> a) -> (b -> ta -> tb) -> Lens ta tb a b  
+lens getter setter = (dimap (getter &&& id) (uncurry setter)) . _1
+
+-- _Head :: Prism' [a] a
+-- (a -> a) -> ()
+
+-- let headM :: [a] -> Either [a] a; headM [] = Left []; headM (x:_) = Right x
+
+prism :: (ta -> Either tb a) -> (b -> tb) -> Prism ta tb a b
+prism match build = dimap match (id ||| build ) . _Right
+-}

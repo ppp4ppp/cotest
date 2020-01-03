@@ -38,7 +38,8 @@ packages:
 # Dependency packages to be pulled from upstream that are not in the resolver
 # using the same syntax as the packages field.
 # (e.g., acme-missiles-0.3)
-# extra-deps: []
+extra-deps:
+- mezzolens-0.0.0@sha256:da3a9df86229e3667c22e1c85a639a3aeb4034bb188831287531f9cd033bcb17,1421
 
 # Override default flag values for local packages and extra-deps
 # flags: {}
