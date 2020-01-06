@@ -5,6 +5,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE TypeOperators #-}
 
 module Main where
 
@@ -23,9 +24,9 @@ import Data.Map
 import Lib
 import Sequence
 import Stream
-import Mezzolens
-import Mezzolens.Optics
-import Mezzolens.Profunctor
+-- import Mezzolens
+-- import Mezzolens.Optics
+-- import Mezzolens.Profunctor
 
 main :: IO ()
 main = someFunc
@@ -100,13 +101,45 @@ liftRight (Co cow) = Co $ \ (Day wa wb f) -> cow ( wb =>> ( \ wf -> f (extract w
 
 
 
-class (Profunctor p) => Convoluted p where
-  convoluted :: (Comonad f, Comonad g, Comonad w)
-             => p (f a) (g b)
-             -> p (Day f w a) (Day g w b)
+type (~>) f g = forall a. f a -> g a
 
-instance Convoluted (->) where
-  convoluted pab = undefined
+data Natural f g = Natural (f ~> g)
+
+class Profunctor p where
+  dimap :: forall a b c d. (Functor a, Functor b, Functor c, Functor d) 
+        => (b ~> d)
+        -> (c ~> a)
+        -> p a b
+        -> p c d
+
+
+unNatural :: forall f g. Natural f g -> f ~> g
+unNatural (Natural f) = f
+
+n1 :: Natural Maybe []
+n1 = Natural wrap where
+      wrap (Just a) = [a]
+      wrap Nothing = []
+
+h1 Nothing = []
+h1 (Just a) = [a]
+
+h2 [] = Nothing
+h2 (x:_) = Just x
+
+
+instance Profunctor Natural where
+  dimap f g (Natural h) = Natural ( f . h . g )
+
+
+class (Profunctor p) => Convoluted p where
+  convoluted :: forall f g w.
+            (Comonad f, Comonad g, Comonad w)
+             => p f g 
+             -> p (Day f w) (Day g w)
+
+instance Convoluted Natural where
+  convoluted (Natural pfg) = Natural $ \ (Day a b f) -> (Day (pfg a) b f)
 
 s4 :: StoreT Int w ()
 s4 = undefined
@@ -116,13 +149,15 @@ sp w = w =>> peeks (+1)
 
 type Blur s t a b = forall p. Convoluted p  => p a b -> p s t
 
-stored :: (Comonad w) => Blur (StoreT s w a) (StoreT t w a) (StoreT s Identity a) (StoreT t Identity a)
-stored pab = dimap t2 t1 (convoluted pab) where
-  t1 :: Day (StoreT t Identity) w a -> StoreT t w a
-  t1 = undefined
+
+stored :: (Comonad w) => Blur (StoreT s w) (StoreT t w) (StoreT s Identity) (StoreT t Identity)
+stored pab = dimap t1 t2 (convoluted pab) where
+  t1 :: (Functor w, Comonad w) => forall a t. Day (StoreT t Identity) w a -> StoreT t w a
+  t1 (Day (StoreT (Identity g) s) w f) = StoreT ( ( \ a s' -> f (g s') a )  <$> w) s
 
   t2 :: StoreT s w a -> Day (StoreT s Identity) w a
-  t2 = undefined
+  t2 (StoreT w_s_a s) = Day (store id s) w_s_a ( \ s' sa' -> sa' s')
+
   
 
 
