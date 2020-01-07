@@ -2,19 +2,19 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Main where
 
 import Control.Arrow
 import Control.Comonad
 import Control.Comonad.Store
-import Control.Monad.State
+import Control.Comonad.Traced
 import Control.Monad
-
+import Control.Monad.State
 import Data.Either
 import Data.Function ((&))
 import Data.Functor.Day
@@ -24,6 +24,7 @@ import Data.Map
 import Lib
 import Sequence
 import Stream
+
 -- import Mezzolens
 -- import Mezzolens.Optics
 -- import Mezzolens.Profunctor
@@ -31,26 +32,24 @@ import Stream
 main :: IO ()
 main = someFunc
 
-
 instance (StreamComonad w) => SequenceMonad (Co w) where
   seqm 0 a = Co $ \w -> (extract w) a
   seqm n a = Co $ \w -> ((runCo (seqm (n - 1) a)) . next) w
 
 instance (ComonadStore s w) => MonadState s (Co w) where
-  state f = Co $ \ w -> case f (pos w) of
-                          (a , s) -> peek s w a
+  state f = Co $ \w -> case f (pos w) of
+    (a, s) -> peek s w a
 
-  -- state = undefined
+-- state = undefined
 
 c1 :: Component (Store Int)
-c1 = store render 10 where
+c1 = store render 10
+  where
     render s send = do
       print "test"
       print s
       getLine
-      send (modify' (+1))
-
-
+      send (modify' (+ 1))
 
 -- handler
 -- component
@@ -65,11 +64,11 @@ f n = Cons (render n) (f (n + 1))
   where
     render :: Int -> (UI (Co Stream ()))
     render n send = do
-      v <- getLine 
+      v <- getLine
       case v of
-        "a" -> do 
-                print n
-                send s3
+        "a" -> do
+          print n
+          send s3
         _ -> print n
 
 s3 :: Co Stream ()
@@ -91,81 +90,162 @@ combine ::
 combine comp1 comp2 = Day comp1 comp2 build
   where
     -- build :: UI w1 -> UI w2 -> UI w
-    build a b = (\h -> (a (h . liftLeft)) <> (b (h . liftRight)) )
+    build a b = (\h -> (a (h . liftLeft)) <> (b (h . liftRight)))
 
-liftLeft :: (Comonad w1, Comonad w2) => Co w1 () -> Co (Day w1 w2) ()       -- w1 ( a -> r )
-liftLeft (Co cow) = Co $ \ (Day wa wb f) -> cow ( wa =>> ( \ wf -> f (extract wf) (extract wb) ))
+liftLeft :: (Comonad w1, Comonad w2) => Co w1 () -> Co (Day w1 w2) () -- w1 ( a -> r )
+liftLeft (Co cow) = Co $ \(Day wa wb f) -> cow (wa =>> (\wf -> f (extract wf) (extract wb)))
 
 liftRight :: (Comonad w1, Comonad w2) => Co w2 () -> Co (Day w1 w2) ()
-liftRight (Co cow) = Co $ \ (Day wa wb f) -> cow ( wb =>> ( \ wf -> f (extract wa) (extract wf) ))
-
-
+liftRight (Co cow) = Co $ \(Day wa wb f) -> cow (wb =>> (\wf -> f (extract wa) (extract wf)))
 
 type (~>) f g = forall a. f a -> g a
 
 data Natural f g = Natural (f ~> g)
 
 class Profunctor p where
-  dimap :: forall a b c d. (Functor a, Functor b, Functor c, Functor d) 
-        => (b ~> d)
-        -> (c ~> a)
-        -> p a b
-        -> p c d
-
+  dimap ::
+    forall a b c d.
+    (Functor a, Functor b, Functor c, Functor d) =>
+    (b ~> d) ->
+    (c ~> a) ->
+    p a b ->
+    p c d
 
 unNatural :: forall f g. Natural f g -> f ~> g
 unNatural (Natural f) = f
 
 n1 :: Natural Maybe []
-n1 = Natural wrap where
-      wrap (Just a) = [a]
-      wrap Nothing = []
+n1 = Natural wrap
+  where
+    wrap (Just a) = [a]
+    wrap Nothing = []
 
 h1 Nothing = []
 h1 (Just a) = [a]
 
 h2 [] = Nothing
-h2 (x:_) = Just x
-
+h2 (x : _) = Just x
 
 instance Profunctor Natural where
-  dimap f g (Natural h) = Natural ( f . h . g )
-
+  dimap f g (Natural h) = Natural (f . h . g)
 
 class (Profunctor p) => Convoluted p where
-  convoluted :: forall f g w.
-            (Comonad f, Comonad g, Comonad w)
-             => p f g 
-             -> p (Day f w) (Day g w)
+  convoluted ::
+    forall f g w.
+    (Comonad f, Comonad g, Comonad w) =>
+    p f g ->
+    p (Day f w) (Day g w)
 
 instance Convoluted Natural where
-  convoluted (Natural pfg) = Natural $ \ (Day a b f) -> (Day (pfg a) b f)
+  convoluted (Natural pfg) = Natural $ \(Day a b f) -> (Day (pfg a) b f)
 
 s4 :: StoreT Int w ()
 s4 = undefined
 
 sp :: Store Int () -> Store Int ()
-sp w = w =>> peeks (+1)
+sp w = w =>> peeks (+ 1)
 
-type Blur s t a b = forall p. Convoluted p  => p a b -> p s t
+type Blur s t a b = forall p. Convoluted p => p a b -> p s t
+
+stored :: (Comonad w) => Blur (StoreT s w) (StoreT t w) (Store s) (Store t)
+stored pab = dimap t1 t2 (convoluted pab)
+  where
+    t1 :: (Functor w, Comonad w) => forall a t. Day (StoreT t Identity) w a -> StoreT t w a
+    t1 (Day (StoreT (Identity g) s) w f) = StoreT ((\a s' -> f (g s') a) <$> w) s
+    t2 :: StoreT s w a -> Day (StoreT s Identity) w a
+    t2 (StoreT w_s_a s) = Day (store id s) w_s_a (\s' sa' -> sa' s')
+
+today :: (Comonad w) => Blur (Day (Store s) w) (Day (Store s) w) (Store s) (Store s)
+today pab = dimap t1 t2 (convoluted pab)
+  where
+    t1 :: (Functor w, Comonad w) => forall a s. Day (Store s) w a -> Day (Store s) w a
+    t1 = id
+    t2 :: (Functor w, Comonad w) => forall a s. Day (Store s) w a -> Day (Store s) w a
+    t2 = id
+
+-- fs
+
+d2 :: Day (Store Int) (Day (Store Int) (Store String)) String
+d2 = Day (store id 1) d1 ((<>) . show)
+
+tomorrow ::
+  (Comonad w) =>
+  Blur (Day Identity (Day (Store s) w)) (Day Identity (Day (Store s) w)) (Store s) (Store s)
+tomorrow pab = dimap t1 t2 (convoluted pab)
+  where
+    t1 ::
+      (Functor w, Comonad w) =>
+      forall a s.
+      Day (Store s) (Day Identity w) a ->
+      (Day Identity (Day (Store s) w)) a
+    t1 (Day s (Day i w f_i_w) f_s_d) = undefined -- (Day i (Day s w ( \ i' -> (f_i_w  i') ) f_s_d)
+
+    t2 ::
+      (Functor w, Comonad w) =>
+      forall a s.
+      (Day Identity (Day (Store s) w)) a ->
+      Day (Store s) (Day Identity w) a
+    t2 = undefined
+
+tomorrow' ::
+  (Comonad w) =>
+  Blur (Day Identity (Day (Store s) w)) (Day Identity (Day (Store s) w)) (Day (Store s) w) (Day (Store s) w)
+tomorrow' pab = dimap t1 t2 (convoluted pab)
+  where
+    t1 ::
+      (Functor w, Comonad w) =>
+      forall a s.
+      Day (Day (Store s) w) Identity a ->
+      (Day Identity (Day (Store s) w)) a
+    t1 = undefined -- (Day i (Day s w ( \ i' -> (f_i_w  i') ) f_s_d)
+
+    t2 ::
+      (Functor w, Comonad w) =>
+      forall a s.
+      (Day Identity (Day (Store s) w)) a ->
+      Day (Day (Store s) w) Identity a
+    t2 = undefined
 
 
-stored :: (Comonad w) => Blur (StoreT s w) (StoreT t w) (StoreT s Identity) (StoreT t Identity)
-stored pab = dimap t1 t2 (convoluted pab) where
-  t1 :: (Functor w, Comonad w) => forall a t. Day (StoreT t Identity) w a -> StoreT t w a
-  t1 (Day (StoreT (Identity g) s) w f) = StoreT ( ( \ a s' -> f (g s') a )  <$> w) s
+nn :: Natural (Store Int) (Store Int)
+nn = Natural (extend (peeks (+ 100)))
 
-  t2 :: StoreT s w a -> Day (StoreT s Identity) w a
-  t2 (StoreT w_s_a s) = Day (store id s) w_s_a ( \ s' sa' -> sa' s')
+s4d :: Day (Store Int) (Store String) String
+s4d = undefined
 
-  
+type W = Identity
 
+s7 :: Day (Store String) (Day Identity W) Bool 
+s7 = Day (store id "s1") (Day (Identity 11) (Identity 12.4 ) f_i_w) f_s_d
 
+f_s_d :: String -> () -> Bool
+f_s_d s _ = (length s) > 1
 
+f_i_w :: Int -> Float -> ()
+f_i_w a b = ()
 
+gather :: a -> b -> (a, b)
+gather a b = (a, b)
 
+s78 :: Day (Store String) (Day Identity W) Bool 
+    -> Day Identity (Day (Store String) W) Bool
+s78 (Day s (Day i w fiw) fsd) = Day i (Day s w gather) ( \ i' (s', w') -> fsd s' (fiw i' w') )  -- (Day s (Day i w fiw) fsd)
 
-  --convoluted = undefined
+s8 :: Day Identity (Day (Store Int) W) Int 
+s8 = Day (Identity 11) (Day (store id 10)  (Identity 12) (+)) (+)
+
+-- st :: Day (Store s) (Day Identity w) a ->
+   --    (Day Identity (Day (Store s) w)) a
+
+tt :: Traced String ()
+tt = traced (\_ -> ())
+
+s5 :: StoreT Int (Traced String) String
+s5 = StoreT (TracedT (Identity (\_ -> (show)))) 0
+
+d1 :: Day (Store Int) (Store String) String
+d1 = Day (store id 11) (store id "one") ((<>) . (<> " ") . (" " <>) . show)
+--convoluted = undefined
 
 {-
 --------------------------------------------------------
@@ -251,7 +331,7 @@ class Profunctor p => Choice p where
 
 instance Strong (->) where
   _1 f = ( \ (a, c) -> (f a, c) )
-  _2 f = fmap f 
+  _2 f = fmap f
 
 instance Choice (->) where
   _Left f = either (Left . f) Right
@@ -267,7 +347,7 @@ type Prism ta tb a b = forall p. Choice p => Optical p ta tb a b
 
 type Prism' ta a = Prism ta ta a a
 
-lens :: (ta -> a) -> (b -> ta -> tb) -> Lens ta tb a b  
+lens :: (ta -> a) -> (b -> ta -> tb) -> Lens ta tb a b
 lens getter setter = (dimap (getter &&& id) (uncurry setter)) . _1
 
 -- _Head :: Prism' [a] a
