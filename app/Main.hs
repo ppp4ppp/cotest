@@ -168,10 +168,10 @@ today pab = dimap t1 t2 (convoluted pab)
 d2 :: Day (Store Int) (Day (Store Int) (Store String)) String
 d2 = Day (store id 1) d1 ((<>) . show)
 
-tomorrow ::
+tomorrow' ::
   (Comonad w) =>
   Blur (Day Identity (Day (Store s) w)) (Day Identity (Day (Store s) w)) (Store s) (Store s)
-tomorrow pab = dimap t1 t2 (convoluted pab)
+tomorrow' pab = dimap t1 t2 (convoluted pab)
   where
     t1 ::
       (Functor w, Comonad w) =>
@@ -187,28 +187,30 @@ tomorrow pab = dimap t1 t2 (convoluted pab)
       Day (Store s) (Day Identity w) a
     t2 = undefined
 
-tomorrow' ::
+tomorrow ::
   (Comonad w) =>
   Blur (Day Identity (Day (Store s) w)) (Day Identity (Day (Store s) w)) (Day (Store s) w) (Day (Store s) w)
-tomorrow' pab = dimap t1 t2 (convoluted pab)
+tomorrow pab = dimap t1 t2 (convoluted pab)
   where
     t1 ::
       (Functor w, Comonad w) =>
       forall a s.
       Day (Day (Store s) w) Identity a ->
       (Day Identity (Day (Store s) w)) a
-    t1 = undefined -- (Day i (Day s w ( \ i' -> (f_i_w  i') ) f_s_d)
-
+    t1 (Day (Day s w f_s_w) i f_d_i) = (Day i (Day s w gather) ( \ i' (s', w') -> f_d_i (f_s_w s' w') i'))
     t2 ::
       (Functor w, Comonad w) =>
       forall a s.
       (Day Identity (Day (Store s) w)) a ->
       Day (Day (Store s) w) Identity a
-    t2 = undefined
-
-
+    t2 (Day i (Day s w f_s_w)  f_i_d) = (Day (Day s w gather) i ( \ (s', w') i' -> f_i_d i' (f_s_w s' w') ))
+    
 nn :: Natural (Store Int) (Store Int)
 nn = Natural (extend (peeks (+ 100)))
+
+ns :: Natural (Store String) (Store String)
+ns = Natural (extend (peeks (<> "-100")))
+
 
 s4d :: Day (Store Int) (Store String) String
 s4d = undefined
@@ -233,6 +235,10 @@ s78 (Day s (Day i w fiw) fsd) = Day i (Day s w gather) ( \ i' (s', w') -> fsd s'
 
 s8 :: Day Identity (Day (Store Int) W) Int 
 s8 = Day (Identity 11) (Day (store id 10)  (Identity 12) (+)) (+)
+
+s8s :: Day Identity (Day (Store String) W) String 
+s8s = Day (Identity " 1 ") (Day (store id " 2 ")  (Identity " 3 ") (<>)) (<>)
+
 
 -- st :: Day (Store s) (Day Identity w) a ->
    --    (Day Identity (Day (Store s) w)) a
