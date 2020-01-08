@@ -28,5 +28,18 @@ instance (Comonad w) => Monad (Co w) where
   
 data Sum f g a = Sum Bool (f a) (g a)
 
-instance Functor (Sum f g) where
+sum1 (Sum _ f _) = f
+sum2 (Sum _ _ f) = f
+mv (Sum b f g) = (Sum (not b) f g)
+
+s1 = Sum True (Identity 1) (Identity 2) 
+
+
+instance (Functor f, Functor g) => Functor (Sum f g) where
+  fmap f (Sum b h k) = (Sum b (fmap f h) (fmap f k))
+
+instance (Comonad w1, Comonad w2) => Comonad (Sum w1 w2) where
+  extract (Sum True a _) = extract a
+  extract (Sum False _ b) = extract b
+  extend f (Sum b fa ga) = Sum b (extend (f . ( flip (Sum b) ga) ) fa) (extend (f . ( (Sum b) fa) ) ga)
 

@@ -27,6 +27,8 @@ dependencies:
 - profunctors
 - mtl
 - mezzolens
+- bytestring
+- hexstring
 
 library:
   source-dirs: src

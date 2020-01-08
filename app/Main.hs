@@ -6,13 +6,15 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
+
 
 module Main where
 
 import Control.Arrow
 import Control.Comonad
 import Control.Comonad.Store
-import Control.Comonad.Traced
+import Control.Comonad.Traced hiding (Sum)
 import Control.Monad
 import Control.Monad.State
 import Data.Either
@@ -24,6 +26,8 @@ import Data.Map
 import Lib
 import Sequence
 import Stream
+import qualified Data.ByteString as B
+import qualified Data.HexString as H
 
 -- import Mezzolens
 -- import Mezzolens.Optics
@@ -239,10 +243,6 @@ s8 = Day (Identity 11) (Day (store id 10)  (Identity 12) (+)) (+)
 s8s :: Day Identity (Day (Store String) W) String 
 s8s = Day (Identity " 1 ") (Day (store id " 2 ")  (Identity " 3 ") (<>)) (<>)
 
-
--- st :: Day (Store s) (Day Identity w) a ->
-   --    (Day Identity (Day (Store s) w)) a
-
 tt :: Traced String ()
 tt = traced (\_ -> ())
 
@@ -252,6 +252,36 @@ s5 = StoreT (TracedT (Identity (\_ -> (show)))) 0
 d1 :: Day (Store Int) (Store String) String
 d1 = Day (store id 11) (store id "one") ((<>) . (<> " ") . (" " <>) . show)
 --convoluted = undefined
+
+
+class Profunctor' p where
+  dimap' ::
+    forall a b c d.
+    (b -> d) ->
+    (c -> a) ->
+    p a b ->
+    p c d
+
+instance Profunctor' (->) where
+  dimap' f g h = f . h . g
+
+class (Profunctor' p) => Choice p where
+  _Left :: p a b -> p (Either a c) (Either b c)
+  _Right :: p a b -> p (Either c a) (Either c b)
+
+instance Choice (->) where
+  _Left pab = either (Left . pab) Right
+  _Right pab = either Left (Right . pab)
+
+type Prism ta tb a b = forall p. (Choice p) => p a b -> p ta tb
+
+-- prism generator
+prism :: (ta -> (Either tb a)) -> (b -> tb) -> Prism ta tb a b
+prism f m = (dimap' ( (|||) id m ) f) . _Right
+
+-- Sum 
+
+
 
 {-
 --------------------------------------------------------
@@ -364,3 +394,9 @@ lens getter setter = (dimap (getter &&& id) (uncurry setter)) . _1
 prism :: (ta -> Either tb a) -> (b -> tb) -> Prism ta tb a b
 prism match build = dimap match (id ||| build ) . _Right
 -}
+
+s :: B.ByteString
+s = "00ffffffffffff001a6e4100010101010011010280000078efe4c6a3594a9723124f54a38c7c314aa9408180d1c081c0010101010101023a801871382d4028408208c06c0000001ec02b408460b00c4010204400d33d0100001e413c80a070b0234030202600d33d0100001a000000fc0046532d4c32343031440a20202001de0203234146810203111204230907078301000067030c002100e87867d85dc4017880078c0ad08a20e02d10103e96000403000000188c0ad08a20e02d10103e96001009000000188c0ad090204031200c4055000403000000188c0ad090204031200c405500100900000018011d007251d01e206e28550010090000001e00002c"
+
+s4k :: B.ByteString
+s4k = "00ffffffffffff001a6e4100000000000e1c010480462578ee1779af5036b8260d4d51a54f808180a940d1c07140010101010101010108e80030f2705a80b0588a00ba712100001a023a801871382d40582c4500b9242000001a000000fc00464d2d443538303144560a2020000000fd001e4c1ea03c000a20202020202001cb020336f053101f0102030405060711121314151620615e5f23090707830100006c030c00210028782000400102e3050301e40f000001023a801871382d40582c450010090000001e023a80d072382d40102c458010090000001e8c0ad08a20e02d10103e96000403000000188c0ad08a20e02d10103e96001009000000180010"
