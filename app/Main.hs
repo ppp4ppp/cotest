@@ -8,6 +8,10 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 
+{-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE OverloadedStrings #-}
+
+
 
 module Main where
 
@@ -27,7 +31,17 @@ import Lib
 import Sequence
 import Stream
 import qualified Data.ByteString as B
-import qualified Data.HexString as H
+
+import Foreign.Ptr
+import Foreign.C
+import Foreign.Marshal.Array
+import Data.Word
+import Data.Hex
+import qualified Data.Text as T
+
+foreign import ccall "plus_ten" plusTen :: Int -> IO Int
+foreign import ccall "parse_edid" parseEdid :: Ptr Word8 -> IO Int
+
 
 -- import Mezzolens
 -- import Mezzolens.Optics
@@ -35,6 +49,15 @@ import qualified Data.HexString as H
 
 main :: IO ()
 main = someFunc
+
+main1 :: B.ByteString -> IO ()
+main1 s = do
+    s' <- unhex s
+    rs <- withArray (B.unpack s') return >>= parseEdid
+    -- rs <- withArray (B.unpack s4k) return >>= parseEdid
+    print rs
+
+
 
 instance (StreamComonad w) => SequenceMonad (Co w) where
   seqm 0 a = Co $ \w -> (extract w) a
@@ -280,6 +303,24 @@ prism :: (ta -> (Either tb a)) -> (b -> tb) -> Prism ta tb a b
 prism f m = (dimap' ( (|||) id m ) f) . _Right
 
 -- Sum 
+
+-- type S2 w a = Sum Identity (Day w (List w)) a
+data List w a = List (Sum Identity (Day w (List w)) a) deriving (Functor)
+
+instance (Comonad w) => Comonad (List w) where
+  extract (List w) = extract w
+  -- (w a -> b) -> w a -> w b
+  extend f (List w) = List ( w =>> ( f . List) )
+
+
+l1 :: List Identity String
+l1 = List (Sum False (return ">") (Day (return "a") l2 (<>)))
+
+l2 :: List Identity String
+l2 = List (Sum False (return ">") (Day (return "b") nl (<>)))
+
+nl :: List Identity String
+nl = List (Sum True (return ">") (Day (return "1") nl  (<>) ))
 
 
 

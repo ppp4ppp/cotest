@@ -29,6 +29,8 @@ dependencies:
 - mezzolens
 - bytestring
 - hexstring
+- hex
+- text
 
 library:
   source-dirs: src
@@ -43,6 +45,7 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - cotest
+    c-sources:     edid1.c
 
 tests:
   cotest-test:
