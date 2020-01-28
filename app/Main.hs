@@ -15,6 +15,7 @@
 
 module Main where
 
+import System.IO.Unsafe
 import Control.Arrow
 import Control.Comonad
 import Control.Comonad.Store
@@ -69,17 +70,18 @@ instance (ComonadStore s w) => MonadState s (Co w) where
 
 -- state = undefined
 
-c1 :: Component (Store Int)
-c1 = store render 10
+c1 :: String -> Component (Store Int)
+c1 tag = store render 10
   where
     render s send = do
-      print "test"
+      print ("test " <> tag)
       print s
-      getLine
-      send (modify' (+ 1))
+      r <- getLine
+      case r of
+        "add1" -> send (modify' (+ 1))
+        "add10" -> send (modify' (+ 10))
+        _ -> pure ()
 
--- handler
--- component
 
 -- type Handler a = a -> IO ()
 type UI a = (a -> IO ()) -> IO ()
@@ -307,6 +309,8 @@ prism f m = (dimap' ( (|||) id m ) f) . _Right
 -- type S2 w a = Sum Identity (Day w (List w)) a
 data List w a = List (Sum Identity (Day w (List w)) a) deriving (Functor)
 
+
+
 instance (Comonad w) => Comonad (List w) where
   extract (List w) = extract w
   -- (w a -> b) -> w a -> w b
@@ -319,10 +323,101 @@ l1 = List (Sum False (return ">") (Day (return "a") l2 (<>)))
 l2 :: List Identity String
 l2 = List (Sum False (return ">") (Day (return "b") nl (<>)))
 
+l3 :: List Identity String
+l3 = (List (Sum False (return ">") (Day (return "b") (ff (return "c") l1) (<>))))
+
+ff w nl = (List (Sum False (return ">") (Day w nl (<>))))
+
 nl :: List Identity String
 nl = List (Sum True (return ">") (Day (return "1") nl  (<>) ))
 
+aa :: List w a -> List w a
+aa (List (Sum b i d@(Day w l@(List (Sum b' i' d'@(Day w' l' f' ))) f ))) = (List (Sum b i (Day w (List (Sum b' i' (Day w' l' f' ))) f )))
 
+
+nextd :: (Comonad w) => List w  ~> List w
+nextd  (List (Sum _ _ d)) = lowerDay1 d
+
+lowerDay1 :: (Comonad w0, Functor w1) => Day w0 w1 ~> w1 
+lowerDay1 (Day w0 w1 f) = fmap (f (extract w0)) w1
+
+lowerDay0 :: (Functor w0, Comonad w1) => Day w0 w1 ~> w0
+lowerDay0 (Day w0 w1 f) = fmap ( \ a0 -> f a0 (extract w1)) w0 
+
+herel :: (Comonad w) => List w ~> w
+herel (List (Sum _ _ d)) = lowerDay0 d
+
+nextl :: (Comonad w) => List w ~> List w
+nextl (List (Sum _ _ d)) = lowerDay1 d
+
+push :: (Comonad w) => Co (List w) ()
+push = Co go where
+  go :: (Comonad w) => forall r. List w (() -> r) -> r
+  go (List (Sum True _ f)) = (extract f) ()
+  go l = do
+      go (unsafePerformIO (do print ">>>> next"; return (nextl l)))
+
+sliftLeft :: forall f g a. Co f a -> Co (Sum f g) a
+sliftLeft x = Co $ \(Sum _ fa _) -> runCo x fa
+
+-- | Lift an action to act on the right state.
+sliftRight :: forall f g a. Co g a -> Co (Sum f g) a
+sliftRight x = Co $ \(Sum _ _ ga) -> runCo x ga
+
+
+comsum :: (Comonad w, Comonad w1) => Component w -> Component w1 -> Component (Sum w w1)
+comsum a b =  (Sum True (fmap ( \ render send -> render (send . sliftLeft)  ) a) (fmap ( \ render send -> render (send . sliftRight)) b))
+
+
+-- | Move to the right state.
+moveRight :: Comonad g => Co (Sum f g) ()
+moveRight = Co $ \ (Sum _ _ ga) -> extract ga (unsafePerformIO (do print "call mr"; return ()))
+
+moveLeft :: Comonad f => Co (Sum f g) ()
+moveLeft = Co $ \ (Sum _ ga _) -> extract ga ()
+
+t5 = explore $ (comsum (c1 "t1") (c1 "t2")) 
+      =>> ( \ wa -> ( \ h -> (extract wa) ( \ a -> h a )) )
+
+gg :: (Comonad w) => Identity ((Co (List w) () -> IO ()) -> IO ())
+gg = Identity ( \ send -> do
+    print "gg"
+    r <- getLine 
+    case r of
+      "push" -> send push
+      _ -> pure ()
+    pure ())
+
+tt2 :: (Comonad w) => w (UI (Co w ())) -> (List w ~> List w) -> w (UI (Co (List w) ()))
+tt2 c f = fmap (rr f) c 
+
+rr :: (Comonad w) => (List w ~> List w) -> UI (Co w ()) -> UI (Co (List w) ())
+rr f r = ( \ v -> (r (v . (liftWith (herel . f)) ))  )
+
+  
+liftWith :: (List w ~> w) -> Co w ~> Co (List w)
+liftWith f x = Co $ \ l -> runCo x (f l)
+
+listOf :: (Comonad w) => w (UI (Co w ())) -> (Component (List w))
+listOf c = build c id where
+  build :: (Comonad w) => w (UI (Co w ())) -> (List w ~> List w) -> (List w (((Co (List w) ()) -> IO ()) -> IO ()))
+  build c f = (List (Sum True gg (Day (tt2 c f) (build c (nextl . f)) (<>) )))
+
+
+listOfN :: (Comonad w) => Int -> w (UI (Co w ())) -> (Component (List w))
+listOfN n c = build n c id where
+  build :: (Comonad w) => Int -> w (UI (Co w ())) -> (List w ~> List w) -> (List w (((Co (List w) ()) -> IO ()) -> IO ()))
+  build 0 c f = (List (Sum True gg (Day (tt2 c f) (build 0 c (nextl . f)) (<>) )))
+  build n c f = (List (Sum False gg (Day (tt2 c f) (build (n - 1) c (nextl . f)) (<>) )))
+
+
+
+
+  -- d :: (Comonad w1) => Day w1 (List w1) ((Co (List w1) () -> IO ()) -> IO ())
+  -- d = 
+
+  -- liftWith :: (List w ~> w) -> Co w ~> Co (List w)
+  -- liftWith = undefined
 
 {-
 --------------------------------------------------------
