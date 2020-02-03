@@ -82,6 +82,8 @@ c1 tag = store render 10
         "add10" -> send (modify' (+ 10))
         _ -> pure ()
 
+ccc = combine (c1 "t0") $ combine (c1 "t1") (c1 "t2")
+ccc1 = combine (c1 "t01") $ combine (c1 "t11") (c1 "t21")
 
 -- type Handler a = a -> IO ()
 type UI a = (a -> IO ()) -> IO ()
@@ -110,6 +112,16 @@ explore component = do
     let send action = modifyIORef state (\s -> (runCo action (extend const s)))
     comp <- readIORef state
     extract comp send
+
+exploreinit :: (Comonad w) => Co w () -> Component w -> IO ()
+exploreinit m component = do
+  state <- newIORef component
+  modifyIORef state (\s -> (runCo m (extend const s)))
+  replicateM_ 3 $ do
+    let send action = modifyIORef state (\s -> (runCo action (extend const s)))
+    comp <- readIORef state
+    extract comp send
+
 
 combine ::
   (Comonad w1, Comonad w2) =>
