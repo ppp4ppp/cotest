@@ -18,6 +18,7 @@ module Main where
 import System.IO.Unsafe
 import Control.Arrow
 import Control.Comonad
+import Control.Monad.Cont
 import Control.Comonad.Store
 import Control.Comonad.Traced hiding (Sum)
 import Control.Monad
@@ -85,6 +86,29 @@ c1 tag = store render 10
 ccc = combine (c1 "t0") $ combine (c1 "t1") (c1 "t2")
 ccc1 = combine (c1 "t01") $ combine (c1 "t11") (c1 "t21")
 
+s13 :: Store Int (() -> ())
+s13 = store ( \ s -> id ) 10
+
+cc2 :: Co (Store Int) ()
+cc2 = do
+  a <- get 
+  case a of
+    11 -> modify' (+1000)
+    _ -> modify' id
+
+cc2a :: Co (Store Int) Int
+cc2a = get
+  
+dd2 :: Co (Day
+            (StoreT Int Identity)
+            (Day (StoreT Int Identity) (StoreT Int Identity))) ()
+dd2 = do
+  v1 <- liftLeft' cc2a
+  v2 <- liftRight' (liftRight' cc2a)
+  case v1 of
+    11 -> liftLeft cc2
+    _ -> liftLeft cc2
+
 -- type Handler a = a -> IO ()
 type UI a = (a -> IO ()) -> IO ()
 
@@ -136,8 +160,15 @@ combine comp1 comp2 = Day comp1 comp2 build
 liftLeft :: (Comonad w1, Comonad w2) => Co w1 () -> Co (Day w1 w2) () -- w1 ( a -> r )
 liftLeft (Co cow) = Co $ \(Day wa wb f) -> cow (wa =>> (\wf -> f (extract wf) (extract wb)))
 
+liftLeft' :: (Comonad w1, Comonad w2) => Co w1 a -> Co (Day w1 w2) a -- w1 ( a -> r )
+liftLeft' (Co cow) = Co $ \(Day wa wb f) -> cow (wa =>> (\wf -> f (extract wf) (extract wb)))
+
 liftRight :: (Comonad w1, Comonad w2) => Co w2 () -> Co (Day w1 w2) ()
 liftRight (Co cow) = Co $ \(Day wa wb f) -> cow (wb =>> (\wf -> f (extract wa) (extract wf)))
+
+liftRight' :: (Comonad w1, Comonad w2) => Co w2 a -> Co (Day w1 w2) a
+liftRight' (Co cow) = Co $ \(Day wa wb f) -> cow (wb =>> (\wf -> f (extract wa) (extract wf)))
+
 
 type (~>) f g = forall a. f a -> g a
 
@@ -542,6 +573,66 @@ lens getter setter = (dimap (getter &&& id) (uncurry setter)) . _1
 prism :: (ta -> Either tb a) -> (b -> tb) -> Prism ta tb a b
 prism match build = dimap match (id ||| build ) . _Right
 -}
+
+ttt :: (Applicative m) => (a -> m b) -> [a] -> m ([b])
+ttt f [x] = ( \ v -> [v]) <$> f x
+ttt f (x:xs) =  (:)  <$> f x <*> (ttt f xs)
+
+ss :: String -> IO ()
+ss = print
+
+ii :: Int -> IO ()
+ii = print
+
+data Con r a = Con ( (a -> r) -> r )
+instance Functor (Con r) where
+  fmap f (Con g) = Con ( \ h -> g (h . f) )
+
+data ConA r a = ConA [( (a -> r) -> r )]
+runCon (Con g) = g
+
+-- data List w a = List (Sum Identity (Day w (List w)) a) deriving (Functor)
+trav :: (Applicative f) => (a -> f b) -> Co (List w) a -> f (Co (List w) b)
+trav f (Co cow) = undefined
+
+nat :: (Applicative f) => (Co (List w) (f b)) -> f (Co (List w) b)
+nat = undefined
+
+-- nat1 :: (Applicative f, Comonad w) => (Co (List w) (f b)) -> (w (f b -> r) -> r)
+nat1 :: (Applicative f, Comonad w) => (Co (List w) (f b)) -> (f (List w (b -> r)) -> r )
+nat1 (Co cow) =  nnn $ runCo $ Co $ \ (List s) -> cow (List s) where
+  nnn f l = (f . f2 . f3 . f4) l
+
+f2 :: w (f b -> r) -> (List w (f b -> r))
+f2 = undefined
+
+f3 :: f (w (b -> r)) -> (w (f b -> r))
+f3 = undefined
+
+f4 :: (Applicative f) => f (List w (b -> r)) -> f (w (b -> r))
+f4 = undefined
+
+f5 :: f ( w ( a -> r) -> r ) -> ( f ( w ( b -> r) ) -> r )
+f5 = undefined
+
+-- type LCo w a = LCo (forall r. w (a -> r) -> r)
+co :: forall w a. (forall r. w (a -> r) -> r) -> Co w a
+co = Co
+
+iii :: forall w a. (forall r. List w (a -> r) -> r) -> Co (List w) a
+iii = co
+
+-- fco :: (Applicative f) => f ((List w (b -> r)) -> r ) -> f (Co (List w) b)
+-- fco = fmap Co
+
+-- List w ( Maybe -> r ) -> r = Maybe (List w ( a -> r) -> r)
+-- List Sum _ i d = (extract d)
+
+
+-- Co (List w) (Maybe ())    ===    Maybe (Co (List w) ())
+-- (List w ( Maybe () -> r) ) -> r === Maybe (List w ( () -> r)) -> r
+-- List (Sum Ident (Day w (List w)))
+
 
 s :: B.ByteString
 s = "00ffffffffffff001a6e4100010101010011010280000078efe4c6a3594a9723124f54a38c7c314aa9408180d1c081c0010101010101023a801871382d4028408208c06c0000001ec02b408460b00c4010204400d33d0100001e413c80a070b0234030202600d33d0100001a000000fc0046532d4c32343031440a20202001de0203234146810203111204230907078301000067030c002100e87867d85dc4017880078c0ad08a20e02d10103e96000403000000188c0ad08a20e02d10103e96001009000000188c0ad090204031200c4055000403000000188c0ad090204031200c405500100900000018011d007251d01e206e28550010090000001e00002c"
