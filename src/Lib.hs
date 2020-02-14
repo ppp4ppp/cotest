@@ -41,5 +41,5 @@ instance (Functor f, Functor g) => Functor (Sum f g) where
 instance (Comonad w1, Comonad w2) => Comonad (Sum w1 w2) where
   extract (Sum True a _) = extract a
   extract (Sum False _ b) = extract b
-  extend f (Sum b fa ga) = Sum b (extend (f . ( flip (Sum b) ga) ) fa) (extend (f . ( (Sum b) fa) ) ga)
+  extend f (Sum b fa ga) = Sum b (extend (f . ( flip (Sum True) ga) ) fa) (extend (f . ( (Sum False) fa) ) ga)
 

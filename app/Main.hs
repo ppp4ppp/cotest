@@ -41,6 +41,8 @@ import Data.Word
 import Data.Hex
 import qualified Data.Text as T
 
+
+
 foreign import ccall "plus_ten" plusTen :: Int -> IO Int
 foreign import ccall "parse_edid" parseEdid :: Ptr Word8 -> IO Int
 
@@ -83,6 +85,21 @@ c1 tag = store render 10
         "add10" -> send (modify' (+ 10))
         _ -> pure ()
 
+c1m :: String -> Component (Store (Maybe Int))
+c1m tag = undefined
+  {-
+  store render (Just 10)
+  where
+    render s send = do
+      print ("test " <> tag)
+      print s
+      r <- getLine
+      case r of
+        "add1" -> send (modify' (fmap (+ 1))  )
+        "add10" -> send (modify' (fmap (+ 10)))
+        _ -> pure ()
+-}
+
 ccc = combine (c1 "t0") $ combine (c1 "t1") (c1 "t2")
 ccc1 = combine (c1 "t01") $ combine (c1 "t11") (c1 "t21")
 
@@ -95,6 +112,11 @@ cc2 = do
   case a of
     11 -> modify' (+1000)
     _ -> modify' id
+
+lll :: Co w a -> Co (List w) ([a])
+lll = undefined
+
+
 
 cc2a :: Co (Store Int) Int
 cc2a = get
@@ -152,10 +174,22 @@ combine ::
   Component w1 ->
   Component w2 ->
   Component (Day w1 w2)
-combine comp1 comp2 = Day comp1 comp2 build
+combine comp1 comp2 = Day (comp1 =>> ( \ wa -> (10, (extract wa) ) ) ) comp2 build
   where
     -- build :: UI w1 -> UI w2 -> UI w
-    build a b = (\h -> (a (h . liftLeft)) <> (b (h . liftRight)))
+    build a b = (\h -> ((snd a) (h . liftLeft)) <> (b (h . liftRight)))
+
+combineCo ::
+  (Comonad w1, Comonad w2) =>
+  (Component w1 -> Bool) ->
+  Component w1 ->
+  Component w2 ->
+  Component (Day w1 w2)
+combineCo a comp1 comp2 = Day (comp1 =>> ( \ wa -> ( extract (wa =>> a) , (extract wa)) ) )  comp2 build
+  where
+    -- build :: UI w1 -> UI w2 -> UI w
+    build a b = (\h -> if (fst a) then ((snd a) (h . liftLeft)) else (b (h . liftRight)))
+
 
 liftLeft :: (Comonad w1, Comonad w2) => Co w1 () -> Co (Day w1 w2) () -- w1 ( a -> r )
 liftLeft (Co cow) = Co $ \(Day wa wb f) -> cow (wa =>> (\wf -> f (extract wf) (extract wb)))
@@ -352,8 +386,6 @@ prism f m = (dimap' ( (|||) id m ) f) . _Right
 -- type S2 w a = Sum Identity (Day w (List w)) a
 data List w a = List (Sum Identity (Day w (List w)) a) deriving (Functor)
 
-
-
 instance (Comonad w) => Comonad (List w) where
   extract (List w) = extract w
   -- (w a -> b) -> w a -> w b
@@ -387,8 +419,25 @@ lowerDay1 (Day w0 w1 f) = fmap (f (extract w0)) w1
 lowerDay0 :: (Functor w0, Comonad w1) => Day w0 w1 ~> w0
 lowerDay0 (Day w0 w1 f) = fmap ( \ a0 -> f a0 (extract w1)) w0 
 
+lowerDayL1 :: (Comonad w, Monoid b) => Day w (List w) (b -> r) -> (List w) (b -> r)
+lowerDayL1 (Day w0 w1@(List (Sum True i d)) f) = fmap (f (extract w0)) w1
+  
+
+seqCo :: (Comonad w, Monoid b) => Co w b -> Co (List w) b 
+seqCo (Co cow) = Co ( \ (List (Sum b i d)) -> cow (lowerDayL0 d)) where
+  lowerDayL0 :: (Comonad w, Monoid b) => Day w (List w) (b -> r) -> w (b -> r)
+  lowerDayL0 (Day w0 w1@(List (Sum False i d)) f) = fmap ( \ a0 -> ( \ bb -> (f a0 (extract (d))) bb ) ) w0
+  lowerDayL0 (Day w0 w1@(List (Sum True  i d)) f) = fmap ( \ a0 -> ( \ bb -> (f a0 (extract (d))) mempty ) ) w0 
+  
+nextCo :: (Comonad w, Monoid b) => Co (List w) b -> Co (List w) b
+nextCo (Co cow) = Co $ \ l -> cow (nextl l)
+
+  -- lowerDayL0 (Day w0 w1 f) = fmap ( \ a0 -> f a0 (extract w1)) w0 
 herel :: (Comonad w) => List w ~> w
 herel (List (Sum _ _ d)) = lowerDay0 d
+
+herell :: (Comonad w) => List w a -> w (Bool, a)
+herell (List (Sum b _ d)) = ((,) b) <$> lowerDay0 d
 
 nextl :: (Comonad w) => List w ~> List w
 nextl (List (Sum _ _ d)) = lowerDay1 d
@@ -397,8 +446,7 @@ push :: (Comonad w) => Co (List w) ()
 push = Co go where
   go :: (Comonad w) => forall r. List w (() -> r) -> r
   go (List (Sum True _ f)) = (extract f) ()
-  go l = do
-      go (unsafePerformIO (do print ">>>> next"; return (nextl l)))
+  go l = go (nextl l)
 
 sliftLeft :: forall f g a. Co f a -> Co (Sum f g) a
 sliftLeft x = Co $ \(Sum _ fa _) -> runCo x fa
@@ -411,7 +459,6 @@ sliftRight x = Co $ \(Sum _ _ ga) -> runCo x ga
 comsum :: (Comonad w, Comonad w1) => Component w -> Component w1 -> Component (Sum w w1)
 comsum a b =  (Sum True (fmap ( \ render send -> render (send . sliftLeft)  ) a) (fmap ( \ render send -> render (send . sliftRight)) b))
 
-
 -- | Move to the right state.
 moveRight :: Comonad g => Co (Sum f g) ()
 moveRight = Co $ \ (Sum _ _ ga) -> extract ga (unsafePerformIO (do print "call mr"; return ()))
@@ -422,12 +469,12 @@ moveLeft = Co $ \ (Sum _ ga _) -> extract ga ()
 t5 = explore $ (comsum (c1 "t1") (c1 "t2")) 
       =>> ( \ wa -> ( \ h -> (extract wa) ( \ a -> h a )) )
 
-gg :: (Comonad w) => Identity ((Co (List w) () -> IO ()) -> IO ())
-gg = Identity ( \ send -> do
+gg :: (Comonad w) => (Co (List w) ()) -> Identity ((Co (List w) () -> IO ()) -> IO ())
+gg pp = Identity ( \ send -> do
     print "gg"
     r <- getLine 
     case r of
-      "push" -> send push
+      "push" -> send pp
       _ -> pure ()
     pure ())
 
@@ -438,23 +485,31 @@ rr :: (Comonad w) => (List w ~> List w) -> UI (Co w ()) -> UI (Co (List w) ())
 rr f r = ( \ v -> (r (v . (liftWith (herel . f)) ))  )
 
   
-liftWith :: (List w ~> w) -> Co w ~> Co (List w)
-liftWith f x = Co $ \ l -> runCo x (f l)
+liftWith :: (Comonad w) => (List w ~> w) -> Co w ~> Co (List w)
+liftWith f x = (Co (\ l -> runCo x (f l))) >>= ( \ _ -> (Co (\ l -> runCo x (f l))))
 
-listOf :: (Comonad w) => w (UI (Co w ())) -> (Component (List w))
-listOf c = build c id where
-  build :: (Comonad w) => w (UI (Co w ())) -> (List w ~> List w) -> (List w (((Co (List w) ()) -> IO ()) -> IO ()))
-  build c f = (List (Sum True gg (Day (tt2 c f) (build c (nextl . f)) (<>) )))
+liftWithll :: forall a r w. (Comonad w) => (List w ~> w) -> Co w ~> Co (List w)
+liftWithll f x = (Co (\ l -> runCo x (f l))) 
 
 
-listOfN :: (Comonad w) => Int -> w (UI (Co w ())) -> (Component (List w))
-listOfN n c = build n c id where
-  build :: (Comonad w) => Int -> w (UI (Co w ())) -> (List w ~> List w) -> (List w (((Co (List w) ()) -> IO ()) -> IO ()))
-  build 0 c f = (List (Sum True gg (Day (tt2 c f) (build 0 c (nextl . f)) (<>) )))
-  build n c f = (List (Sum False gg (Day (tt2 c f) (build (n - 1) c (nextl . f)) (<>) )))
+mapWith :: forall w. (Comonad w) => Co w () -> Co (List w) ()
+mapWith x = (Co wrap)  where
+  -- wrap :: forall w r. (Comonad w) => List w (() -> r) -> r
+  wrap l@(List (Sum True i d)) = runCo x (herel l)
+  wrap l@(List (Sum False i d)) = runCo x (herel (List (Sum False i (d =>> ( \ wa -> extract (lowerDay1 wa ) ) )          )))
+  
+  -- (d =>> ( \ wa -> extract (lowerDay1 wa ) ) ) )
 
 
+listOf :: (Comonad w) => Co (List w) () -> w (UI (Co w ())) -> (Component (List w))
+listOf t1t c = build t1t c id where
+  build :: (Comonad w) => Co (List w) () -> w (UI (Co w ())) -> (List w ~> List w) -> (List w (((Co (List w) ()) -> IO ()) -> IO ()))
+  build t1t c f = (List (Sum True (gg t1t) (Day (tt2 c f) (build t1t c (nextl . f)) (<>) )))
 
+
+-- t1t = do 
+  -- rs <- seqCo (get >>= ( \ x -> pure [x]))
+ -- push 
 
   -- d :: (Comonad w1) => Day w1 (List w1) ((Co (List w1) () -> IO ()) -> IO ())
   -- d = 
@@ -592,16 +647,32 @@ data ConA r a = ConA [( (a -> r) -> r )]
 runCon (Con g) = g
 
 -- data List w a = List (Sum Identity (Day w (List w)) a) deriving (Functor)
-trav :: (Applicative f) => (a -> f b) -> Co (List w) a -> f (Co (List w) b)
-trav f (Co cow) = undefined
+-- trav :: (Applicative f) => (a -> f b) -> Co (List w) a -> f (Co (List w) b)
+-- trav f c = 
 
-nat :: (Applicative f) => (Co (List w) (f b)) -> f (Co (List w) b)
-nat = undefined
+seqA :: Applicative f => [f a] -> f [a]
+seqA [x] =  pure <$> x
+seqA (x:xs) =  (:) <$> x <*> (seqA xs)
 
--- nat1 :: (Applicative f, Comonad w) => (Co (List w) (f b)) -> (w (f b -> r) -> r)
-nat1 :: (Applicative f, Comonad w) => (Co (List w) (f b)) -> (f (List w (b -> r)) -> r )
-nat1 (Co cow) =  nnn $ runCo $ Co $ \ (List s) -> cow (List s) where
-  nnn f l = (f . f2 . f3 . f4) l
+f1 ::(f b -> r) -> (List w) (f b -> r) 
+f1 = undefined
+
+aaa :: (Applicative f, Comonad w) => List w (b -> r) -> List w (f b -> r) 
+aaa l@(List (Sum b i d)) = cc1 l
+
+cc1 :: (Applicative f, Comonad w) => w (b -> r) -> w (f b -> r) 
+cc1 = undefined
+
+-- \ List w ( f b -> r ) -> r === f \ List w ( b -> r ) -> r
+
+-- instance Foldable (Co (List w))
+
+-- instance (Comonad w) => Traversable (Co (List w)) where
+  -- sequenceA = seqCo
+
+tra :: (Applicative f) => (a -> f b) -> [a] -> f [b]
+tra f [x] = (  \ v -> [v] ) <$> f x
+tra f (x:xs) = (:) <$> f x <*> (tra f xs)
 
 f2 :: w (f b -> r) -> (List w (f b -> r))
 f2 = undefined
@@ -633,9 +704,23 @@ iii = co
 -- (List w ( Maybe () -> r) ) -> r === Maybe (List w ( () -> r)) -> r
 -- List (Sum Ident (Day w (List w)))
 
+class Functor g => Distributive g where
+  -- | The dual of 'Data.Traversable.mapM'
+  cotraverse :: Comonad w => (w a -> b) -> w (g a) -> g b
 
-s :: B.ByteString
-s = "00ffffffffffff001a6e4100010101010011010280000078efe4c6a3594a9723124f54a38c7c314aa9408180d1c081c0010101010101023a801871382d4028408208c06c0000001ec02b408460b00c4010204400d33d0100001e413c80a070b0234030202600d33d0100001a000000fc0046532d4c32343031440a20202001de0203234146810203111204230907078301000067030c002100e87867d85dc4017880078c0ad08a20e02d10103e96000403000000188c0ad08a20e02d10103e96001009000000188c0ad090204031200c4055000403000000188c0ad090204031200c405500100900000018011d007251d01e206e28550010090000001e00002c"
+  -- | The dual of 'Data.Traversable.sequence'
+  distribute :: Comonad w => w (g a) -> g (w a)
 
-s4k :: B.ByteString
-s4k = "00ffffffffffff001a6e4100000000000e1c010480462578ee1779af5036b8260d4d51a54f808180a940d1c07140010101010101010108e80030f2705a80b0588a00ba712100001a023a801871382d40582c4500b9242000001a000000fc00464d2d443538303144560a2020000000fd001e4c1ea03c000a20202020202001cb020336f053101f0102030405060711121314151620615e5f23090707830100006c030c00210028782000400102e3050301e40f000001023a801871382d40582c450010090000001e023a80d072382d40102c458010090000001e8c0ad08a20e02d10103e96000403000000188c0ad08a20e02d10103e96001009000000180010"
+  cotraverse f = fmap f . distribute
+  distribute = cotraverse id
+  
+instance Distributive Identity where
+  cotraverse f = Identity . f . fmap runIdentity
+  distribute = Identity . fmap runIdentity
+
+instance Distributive ((->)e) where
+  distribute w e = fmap ($e) w
+
+-- | Every 'Distributive' is a 'Functor'. This is a valid default definition.
+fmapDefault :: Distributive g => (a -> b) -> g a -> g b
+fmapDefault f = cotraverse (f . runIdentity) . Identity
