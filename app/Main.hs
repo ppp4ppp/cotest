@@ -71,7 +71,34 @@ instance (ComonadStore s w) => MonadState s (Co w) where
   state f = Co $ \w -> case f (pos w) of
     (a, s) -> peek s w a
 
--- state = undefined
+li :: List (Store String) (((Co (List (Store String)) ()) -> String) -> String)
+li = List (Sum True (pure ( \ _ -> "") ) (Day (pure ( \ _ -> "a") )  li (<>) ) ) 
+
+coli :: Co (List (Store String)) ()
+coli = pure ()
+
+colir :: Co (Store String) () -> ((Co (List (Store String)) ()) -> String) -> String
+colir cow f = ( \ col -> f col) (liftWith (herel . nextl) cow)
+
+cos1 :: Co (Store String) ()
+cos1 = modify' (<> "a*")
+
+fftest :: (Co (List (Store String)) ()) -> String
+fftest (Co l) = undefined -- extract 
+
+lilili = runCo (push >> push) (extend const (runCo (push >> push) (extend const li)))
+
+coi :: Co (Store String) ()
+coi = modify' ( \ s ->  ( s <> "|coi|" <> (show (length s)) ))
+
+i1io :: (Store String) (((Co (Store String) ()) -> String) -> String)
+i1io = store render "[i1io]" where  
+  render s send = s <> (send coi)
+
+rrr = runCo coi (extend const (runCo coi (extend const (runCo coi (extend const i1io)))))
+
+corrr :: (Co (Store String) () -> String) 
+corrr f = ""
 
 c1 :: String -> Component (Store Int)
 c1 tag = store render 10
@@ -116,7 +143,11 @@ cc2 = do
 lll :: Co w a -> Co (List w) ([a])
 lll = undefined
 
+ci :: Co Identity ()
+ci = Co $ \ l -> extract l ()
 
+cs :: Co (Store String) ()
+cs = Co $ \ l -> extract l ()
 
 cc2a :: Co (Store Int) Int
 cc2a = get
@@ -134,6 +165,7 @@ dd2 = do
 -- type Handler a = a -> IO ()
 type UI a = (a -> IO ()) -> IO ()
 
+--                 w ((Co w ()) -> IO () -> IO () )
 type Component w = w (UI (Co w ()))
 
 f :: Int -> Component Stream
@@ -390,6 +422,7 @@ instance (Comonad w) => Comonad (List w) where
   extract (List w) = extract w
   -- (w a -> b) -> w a -> w b
   extend f (List w) = List ( w =>> ( f . List) )
+
 
 
 l1 :: List Identity String
@@ -720,6 +753,9 @@ instance Distributive Identity where
 
 instance Distributive ((->)e) where
   distribute w e = fmap ($e) w
+
+instance Distributive (Store w) where
+  distribute 
 
 -- | Every 'Distributive' is a 'Functor'. This is a valid default definition.
 fmapDefault :: Distributive g => (a -> b) -> g a -> g b
