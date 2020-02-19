@@ -23,6 +23,7 @@ import Control.Comonad.Store
 import Control.Comonad.Traced hiding (Sum)
 import Control.Monad
 import Control.Monad.State
+import Control.Monad.Writer hiding (Sum)
 import Data.Either
 import Data.Function ((&))
 import Data.Functor.Day
@@ -71,22 +72,19 @@ instance (ComonadStore s w) => MonadState s (Co w) where
   state f = Co $ \w -> case f (pos w) of
     (a, s) -> peek s w a
 
-li :: List (Store String) (((Co (List (Store String)) ()) -> String) -> String)
-li = List (Sum True (pure ( \ _ -> "") ) (Day (pure ( \ _ -> "a") )  li (<>) ) ) 
+instance (Monoid s, ComonadTraced s w) => MonadWriter s (Co w) where
+  tell s = Co $ \ w -> trace s w ()
 
-coli :: Co (List (Store String)) ()
-coli = pure ()
-
-colir :: Co (Store String) () -> ((Co (List (Store String)) ()) -> String) -> String
-colir cow f = ( \ col -> f col) (liftWith (herel . nextl) cow)
-
-cos1 :: Co (Store String) ()
-cos1 = modify' (<> "a*")
+--- li :: List (Store String) (((Co (List (Store String)) ()) -> String) -> String)
+li = listOf' (c1 "test")
 
 fftest :: (Co (List (Store String)) ()) -> String
 fftest (Co l) = undefined -- extract 
 
 lilili = runCo (push >> push) (extend const (runCo (push >> push) (extend const li)))
+
+
+
 
 coi :: Co (Store String) ()
 coi = modify' ( \ s ->  ( s <> "|coi|" <> (show (length s)) ))
@@ -519,7 +517,7 @@ rr f r = ( \ v -> (r (v . (liftWith (herel . f)) ))  )
 
   
 liftWith :: (Comonad w) => (List w ~> w) -> Co w ~> Co (List w)
-liftWith f x = (Co (\ l -> runCo x (f l))) >>= ( \ _ -> (Co (\ l -> runCo x (f l))))
+liftWith f (Co x) = (Co (\ l ->  (x . f) l))
 
 liftWithll :: forall a r w. (Comonad w) => (List w ~> w) -> Co w ~> Co (List w)
 liftWithll f x = (Co (\ l -> runCo x (f l))) 
@@ -538,6 +536,11 @@ listOf :: (Comonad w) => Co (List w) () -> w (UI (Co w ())) -> (Component (List 
 listOf t1t c = build t1t c id where
   build :: (Comonad w) => Co (List w) () -> w (UI (Co w ())) -> (List w ~> List w) -> (List w (((Co (List w) ()) -> IO ()) -> IO ()))
   build t1t c f = (List (Sum True (gg t1t) (Day (tt2 c f) (build t1t c (nextl . f)) (<>) )))
+
+listOf' :: (Comonad w) =>  w (UI (Co w ())) -> (Component (List w))
+listOf' c = build c id where
+  build :: (Comonad w) =>  w (UI (Co w ())) -> (List w ~> List w) -> (List w (((Co (List w) ()) -> IO ()) -> IO ()))
+  build c f = (List (Sum True (gg (pure ())) (Day (tt2 c f) (build c (nextl . f)) (<>) )))
 
 
 -- t1t = do 
@@ -755,8 +758,42 @@ instance Distributive ((->)e) where
   distribute w e = fmap ($e) w
 
 instance Distributive (Store w) where
-  distribute 
+  distribute w = extract w =>> (fmap (\ v -> fmap extract v) (const w))
 
 -- | Every 'Distributive' is a 'Functor'. This is a valid default definition.
 fmapDefault :: Distributive g => (a -> b) -> g a -> g b
 fmapDefault f = cotraverse (f . runIdentity) . Identity
+
+ts :: Traced String (Store (Int, Int) Int)
+ts = traced ( \ s -> (store ((+ (length s)) .  fst) (10,20)))
+
+instance (Comonad f, Comonad g) => Distributive (Sum f g) where
+  distribute w = extract w =>> (fmap (\ v -> fmap extract v) (const w))
+
+grep :: (Comonad w) => Co (List w) [()]
+grep = Co go where
+  go :: (Comonad w) => forall r. List w ([()] -> r) -> r
+  go (List (Sum True i _)) = (extract i) []
+  go l = go ((nextl l) =>> ( \ wa -> ((extract wa ) . (<> [()]) ) ) )
+
+grepa :: (Comonad w) => Co w [a] -> Co (List w) [a]
+grepa (Co extwa) = Co go where
+  -- go :: (Comonad w) => forall r. List w ([a] -> r) -> r
+  go (List (Sum True i _)) = (extract i) []
+  go l = go ((nextl l) =>> ( \ wa -> ( (extract wa) . (<> []) ) ) )
+
+grepst :: (ComonadStore s w) => Co (List w) [s]
+grepst = Co go where
+  -- go :: (Comonad w) => forall r. List w ([a] -> r) -> r
+  go (List (Sum True i _)) = (extract i) []
+  go l = go ((nextl l) =>> ( \ wa -> ( (extract wa) . (<> [ pos (herel wa) ]) ) ) )
+
+
+
+uplast :: (Comonad w) => Co w () -> Co (List w) ()
+uplast c = do
+  xs <- grep 
+  case xs of
+    [x] -> liftWith (herel . nextl) c
+    _ -> pure ()
+
