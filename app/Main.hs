@@ -421,7 +421,18 @@ instance (Comonad w) => Comonad (List w) where
   -- (w a -> b) -> w a -> w b
   extend f (List w) = List ( w =>> ( f . List) )
 
+--
+data R1 a = R1 (Either a [R1 a]) deriving Show
 
+data CoR w a = CoR (Sum w (List (CoR w)) a) deriving (Functor)
+
+instance (Comonad w) => Comonad (CoR w) where
+  extract (CoR w) = extract w
+  -- (w a -> b) -> w a -> w b
+  extend f (CoR w) = CoR ( w =>> ( f . CoR) )
+
+r1 :: R1 String 
+r1 = R1 $ Left "test"
 
 l1 :: List Identity String
 l1 = List (Sum False (return ">") (Day (return "a") l2 (<>)))
@@ -462,6 +473,13 @@ seqCo (Co cow) = Co ( \ (List (Sum b i d)) -> cow (lowerDayL0 d)) where
   
 nextCo :: (Comonad w, Monoid b) => Co (List w) b -> Co (List w) b
 nextCo (Co cow) = Co $ \ l -> cow (nextl l)
+
+herecor :: (Comonad w) => CoR w ~> w
+herecor (CoR (Sum b w l)) = w
+
+nextcor :: (Comonad w) => CoR w ~> CoR w
+nextcor (CoR (Sum b w l)) = herel l
+
 
   -- lowerDayL0 (Day w0 w1 f) = fmap ( \ a0 -> f a0 (extract w1)) w0 
 herel :: (Comonad w) => List w ~> w
@@ -516,8 +534,9 @@ rr :: (Comonad w) => (List w ~> List w) -> UI (Co w ()) -> UI (Co (List w) ())
 rr f r = ( \ v -> (r (v . (liftWith (herel . f)) ))  )
 
   
-liftWith :: (Comonad w) => (List w ~> w) -> Co w ~> Co (List w)
+liftWith :: (Comonad w) => (t w ~> w) -> Co w ~> Co (t w)
 liftWith f (Co x) = (Co (\ l ->  (x . f) l))
+
 
 liftWithll :: forall a r w. (Comonad w) => (List w ~> w) -> Co w ~> Co (List w)
 liftWithll f x = (Co (\ l -> runCo x (f l))) 
@@ -539,9 +558,35 @@ listOf t1t c = build t1t c id where
 
 listOf' :: (Comonad w) =>  w (UI (Co w ())) -> (Component (List w))
 listOf' c = build c id where
-  build :: (Comonad w) =>  w (UI (Co w ())) -> (List w ~> List w) -> (List w (((Co (List w) ()) -> IO ()) -> IO ()))
-  build c f = (List (Sum True (gg (pure ())) (Day (tt2 c f) (build c (nextl . f)) (<>) )))
+  build :: (Comonad w) 
+        =>  w (UI (Co w ())) 
+        -> (List w ~> List w) 
+        -> (List w (((Co (List w) ()) -> IO ()) -> IO ()))
+  build c f = 
+    (List 
+      (Sum True (Identity (\ _ -> pure ()))
+      (Day (fmap 
+        ( \ h -> ( \ coe -> (h (coe . (liftWith (herel . f)))))) c ) 
+        (build c (nextl . f)) (<>) )))
 
+corOf :: (Comonad w) =>  w (UI (Co w ())) -> (Component (CoR w))
+corOf c = build c id where
+  build :: (Comonad w) 
+        =>  w (UI (Co w ())) 
+        -> (CoR w ~> CoR w) 
+        -> (CoR w (((Co (CoR w) ()) -> IO ()) -> IO ()))
+  build c f = 
+    (CoR 
+      (Sum True (cw c f) 
+      (cl c f)))
+
+cw :: (Comonad w1) => w1 (UI (Co w1 ())) -> (CoR w1 ~> CoR w1) -> w1 ((Co (CoR w1) () -> IO ()) -> IO ())
+cw c f = fmap 
+          ( \ h -> ( \ coe -> (h (coe . (liftWith (herecor . f)))))) c 
+
+cl :: w1 (UI (Co w1 ())) -> (CoR w1 ~> CoR w1) -> (List (CoR w1) ((Co (CoR w1) () -> IO ()) -> IO ())) 
+cl c f = undefined
+-- corOf :: 
 
 -- t1t = do 
   -- rs <- seqCo (get >>= ( \ x -> pure [x]))
