@@ -480,6 +480,9 @@ herecor (CoR (Sum b w l)) = w
 nextcor :: (Comonad w) => CoR w ~> CoR w
 nextcor (CoR (Sum b w l)) = herel l
 
+nextcorl1 :: (Comonad w) => CoR w ~> CoR w
+nextcorl1 (CoR (Sum b w l)) = (herel <<< nextl) l
+
 
   -- lowerDayL0 (Day w0 w1 f) = fmap ( \ a0 -> f a0 (extract w1)) w0 
 herel :: (Comonad w) => List w ~> w
@@ -578,7 +581,39 @@ corOf c = build c id where
   build c f = 
     (CoR 
       (Sum True (cw c f) 
-      (cl c f)))
+        (build2 c f)))
+  build2 :: (Comonad w) 
+        =>  w (UI (Co w ())) 
+        -> (CoR w ~> CoR w) 
+        -> (List (CoR w)) (((Co (CoR w) ()) -> IO ()) -> IO ())
+  build2 c f = 
+    (List 
+      (Sum True 
+        (Identity (\ _ -> pure ()))
+        (dddd c f)))
+  dddd :: (Comonad w) 
+          => w (UI (Co w ())) 
+          -> (CoR w ~> CoR w)
+          -> Day (CoR w)  (List (CoR w)) ((Co (CoR w) () -> IO ()) -> IO ())
+  dddd c f = Day (build c f) (build2 c f) (<>)
+
+corcor = (corOf (c1 ""))
+
+pushcor :: (Comonad w) => Co (CoR w) ()
+pushcor = Co go where
+  go :: (Comonad w) => forall r. CoR w (() -> r) -> r
+  go (CoR (Sum True _ f)) = (extract f) ()
+  go l = go (nextcor (unsafePerformIO (print "go 1" >> (pure l))))
+
+pushcorl1 :: (Comonad w) => Co (CoR w) ()
+pushcorl1 = Co go where
+  go :: (Comonad w) => forall r. CoR w (() -> r) -> r
+  go (CoR (Sum True _ f)) = (extract f) ()
+  go l = go (nextcorl1 (unsafePerformIO (print "go 1" >> (pure l))))
+
+
+cccc = (runCo (pushcorl1 >> pushcorl1 >> pushcorl1 >> pushcorl1   ) (extend const corcor))
+cccc1 = (runCo (pure ()) (extend const corcor))
 
 cw :: (Comonad w1) => w1 (UI (Co w1 ())) -> (CoR w1 ~> CoR w1) -> w1 ((Co (CoR w1) () -> IO ()) -> IO ())
 cw c f = fmap 
@@ -586,6 +621,10 @@ cw c f = fmap
 
 cl :: w1 (UI (Co w1 ())) -> (CoR w1 ~> CoR w1) -> (List (CoR w1) ((Co (CoR w1) () -> IO ()) -> IO ())) 
 cl c f = undefined
+
+
+ii5 :: Identity ((((Co (CoR w) ()) -> IO ()) -> IO ()))
+ii5 = undefined
 -- corOf :: 
 
 -- t1t = do 
