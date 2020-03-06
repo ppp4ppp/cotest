@@ -7,10 +7,11 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveTraversable #-}
 
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE OverloadedStrings #-}
-
+{-# LANGUAGE ScopedTypeVariables #-}
 
 
 module Main where
@@ -34,6 +35,7 @@ import Lib
 import Sequence
 import Stream
 import qualified Data.ByteString as B
+import Control.Comonad.Cofree
 
 import Foreign.Ptr
 import Foreign.C
@@ -42,7 +44,7 @@ import Data.Word
 import Data.Hex
 import qualified Data.Text as T
 
-
+import Control.Comonad.Trans.Cofree
 
 foreign import ccall "plus_ten" plusTen :: Int -> IO Int
 foreign import ccall "parse_edid" parseEdid :: Ptr Word8 -> IO Int
@@ -872,8 +874,6 @@ grepst = Co go where
   go (List (Sum True i _)) = (extract i) []
   go l = go ((nextl l) =>> ( \ wa -> ( (extract wa) . (<> [ pos (herel wa) ]) ) ) )
 
-
-
 uplast :: (Comonad w) => Co w () -> Co (List w) ()
 uplast c = do
   xs <- grep 
@@ -881,3 +881,33 @@ uplast c = do
     [x] -> liftWith (herel . nextl) c
     _ -> pure ()
 
+cft :: CofreeT ((->) Int) Identity [Int]
+cft = coiterT ( \ (Identity xs) -> ( \ (i::Int) -> (Identity xs))) (pure [0,0])
+
+cfts :: CofreeT ((->) Int) (Store Int) [Int]
+cfts = coiterT ( \ s -> ( \ (i::Int) -> s)) (store ( \ a -> [a]) 0)
+
+pedalt :: CofreeT ((->) Int) (Store Int) [Int] -> IO ()
+pedalt cfts = do
+  v <- getLine >>= pure . read
+  print v
+  cfts' <- pure $ unwrap cfts  v 
+  print (extract cfts')
+  pedalt cfts'
+
+{-
+cf :: Cofree ((->) Int) [Int]
+cf = coiter f [0,0] where
+  f :: [Int] -> Int -> [Int]
+  f [1,1] _ = [0,0]
+  f [0, b] 1 = [1, b]
+  f [0, b] 2 = [0, 1]
+  f xs _ = xs
+
+pedal cf = do
+  v <- getLine >>= pure . read
+  print v
+  cf' <- pure $ unwrap cf v
+  print (extract cf')
+  pedal cf'
+-}
