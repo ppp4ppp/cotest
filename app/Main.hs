@@ -168,8 +168,8 @@ type UI a = (a -> IO ()) -> IO ()
 --                 w ((Co w ()) -> IO () -> IO () )
 type Component w = w (UI (Co w ()))
 
-f :: Int -> Component Stream
-f n = Cons (render n) (f (n + 1))
+fs :: Int -> Component Stream
+fs n = Cons (render n) (fs (n + 1))
   where
     render :: Int -> (UI (Co Stream ()))
     render n send = do
@@ -947,16 +947,30 @@ storeTexample = StoreT (fmap stateToProp (fmap coTo ( c1 "c1"))) "test"
 -- storeTexample = StoreT (store  ( \ a b -> se' ) 0 ) "test"
   -- w a -> w (s -> a)
 
-stateToProp :: a -> (s -> a)
-stateToProp = const
+stateToProp :: ((( Co (StoreT String (Store Int)) ()) -> IO ()) -> IO ()) 
+            -> (String -> ((( Co (StoreT String (Store Int)) ()) -> IO ()) -> IO ()))
+stateToProp  a = const ( \ h -> a (h . gg1 ))
+
+gg1 :: ( Co (StoreT String (Store Int)) ()) -> ( Co (StoreT String (Store Int)) ())
+gg1 a = do 
+    a
+    v <- (fa get)
+    case v == 11 of
+      True -> (f (put 1000))
+      False -> pure ()
 
 coTo :: ((( Co ((Store Int)) ()) -> IO ()) -> IO ())
       -> (((( Co (StoreT String (Store Int)) ()) -> IO ()) -> IO ())) 
-coTo ui = \ send -> ui (send . f) where
-  f :: ( Co ((Store Int)) ()) -> ( Co (StoreT String (Store Int)) ())
-  f (Co cow) = Co $ \ w -> (cow (f' w))
-  f' :: StoreT String (Store Int) ~> (Store Int)
-  f' tt' = (\ f -> f (snd (runStoreT tt'))) <$> (fst (runStoreT tt'))
+coTo ui = \ send -> ui (send . f) 
+
+fa :: ( Co ((Store Int)) a) -> ( Co (StoreT String (Store Int)) a)
+fa (Co cow) = Co $ \ w -> (cow (f' w))
+
+f :: ( Co ((Store Int)) ()) -> ( Co (StoreT String (Store Int)) ())
+f (Co cow) = Co $ \ w -> (cow (f' w))
+
+f' :: StoreT String (Store Int) ~> (Store Int)
+f' tt' = (\ f -> f (snd (runStoreT tt'))) <$> (fst (runStoreT tt'))
 
 c2 :: Store Int ((( Co (StoreT String (Store Int)) ()) -> IO ()) -> IO ())
 c2 = undefined
