@@ -46,9 +46,6 @@ import qualified Data.Text as T
 
 import Control.Comonad.Trans.Cofree
 
-foreign import ccall "plus_ten" plusTen :: Int -> IO Int
-foreign import ccall "parse_edid" parseEdid :: Ptr Word8 -> IO Int
-
 
 -- import Mezzolens
 -- import Mezzolens.Optics
@@ -56,13 +53,6 @@ foreign import ccall "parse_edid" parseEdid :: Ptr Word8 -> IO Int
 
 main :: IO ()
 main = someFunc
-
-main1 :: B.ByteString -> IO ()
-main1 s = do
-    s' <- unhex s
-    rs <- withArray (B.unpack s') return >>= parseEdid
-    -- rs <- withArray (B.unpack s4k) return >>= parseEdid
-    print rs
 
 
 
@@ -885,7 +875,7 @@ cft :: CofreeT ((->) Int) Identity [Int]
 cft = coiterT ( \ (Identity xs) -> ( \ (i::Int) -> (Identity xs))) (pure [0,0])
 
 cfts :: CofreeT ((->) Int) (Store Int) [Int]
-cfts = coiterT ( \ s -> ( \ (i::Int) -> s)) (store ( \ a -> [a]) 0)
+cfts = coiterT ( \ (s::((Store Int) [Int])) -> ( \ (i::Int) -> s)) (store ( \ a -> [a]) 0)
 
 pedalt :: CofreeT ((->) Int) (Store Int) [Int] -> IO ()
 pedalt cfts = do
@@ -894,6 +884,9 @@ pedalt cfts = do
   cfts' <- pure $ unwrap cfts  v 
   print (extract cfts')
   pedalt cfts'
+
+copedalt :: Component (CofreeT ((->) Int) (Store Int))
+copedalt = undefined
 
 {-
 cf :: Cofree ((->) Int) [Int]
@@ -910,4 +903,4 @@ pedal cf = do
   cf' <- pure $ unwrap cf v
   print (extract cf')
   pedal cf'
--}
+-}  
