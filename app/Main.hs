@@ -158,8 +158,8 @@ type UI a = (a -> IO ()) -> IO ()
 --                 w ((Co w ()) -> IO () -> IO () )
 type Component w = w (UI (Co w ()))
 
-f :: Int -> Component Stream
-f n = Cons (render n) (f (n + 1))
+fs :: Int -> Component Stream
+fs n = Cons (render n) (fs (n + 1))
   where
     render :: Int -> (UI (Co Stream ()))
     render n send = do
@@ -875,7 +875,7 @@ cft :: CofreeT ((->) Int) Identity [Int]
 cft = coiterT ( \ (Identity xs) -> ( \ (i::Int) -> (Identity xs))) (pure [0,0])
 
 cfts :: CofreeT ((->) Int) (Store Int) [Int]
-cfts = coiterT ( \ (s::((Store Int) [Int])) -> ( \ (i::Int) -> s)) (store ( \ a -> [a]) 0)
+cfts = coiterT ( \ (s::(Store Int [Int])) -> ( \ (i::Int) -> (s::(Store Int [Int])))) (store ( \ a -> [a]) 0)
 
 pedalt :: CofreeT ((->) Int) (Store Int) [Int] -> IO ()
 pedalt cfts = do
@@ -903,4 +903,76 @@ pedal cf = do
   cf' <- pure $ unwrap cf v
   print (extract cf')
   pedal cf'
--}  
+-}
+
+{-
+hoistTransitionT :: v ~> w -> TransitionT w m ~> TransitionT v m
+hoistTransitionT nt (TransitionT t) = TransitionT (t . nt)
+
+-- | TODO: write documentation
+liftUI ::
+  (Comonad w,
+  Functor m)
+  => wp ~> w
+  -> UI m w ~> UI m wp
+liftUI lower ui = \send -> ui (send . hoistTransitionT lower)
+
+-- | TODO: write documentation
+liftUIT ::
+  (Comonad w,
+  Functor m)
+  => ComonadTrans wp
+  => UI m w ~> UI m (wp w)
+liftUIT = liftUI lower
+
+-- | TODO: write documentation
+liftComponent ::
+  (Comonad w
+  , Functor m)
+  => wp ~> w
+  -> Component m w f a -> UI m wp (f a)
+liftComponent lower = liftUI lower . extract
+-}
+
+
+storeTexample :: Component (StoreT String (Store Int) )
+storeTexample = StoreT (fmap stateToProp (fmap coTo ( c1 "c1"))) "test"
+-- storeTexample = StoreT (store  ( \ a b -> se' ) 0 ) "test"
+  -- w a -> w (s -> a)
+
+stateToProp :: ((( Co (StoreT String (Store Int)) ()) -> IO ()) -> IO ()) 
+            -> (String -> ((( Co (StoreT String (Store Int)) ()) -> IO ()) -> IO ()))
+stateToProp  a = const ( \ h -> a (h . gg1 ))
+
+gg1 :: ( Co (StoreT String (Store Int)) ()) -> ( Co (StoreT String (Store Int)) ())
+gg1 a = do 
+    a
+    v <- (fa get)
+    case v == 11 of
+      True -> (f (put 1000))
+      False -> pure ()
+
+coTo :: ((( Co ((Store Int)) ()) -> IO ()) -> IO ())
+      -> (((( Co (StoreT String (Store Int)) ()) -> IO ()) -> IO ())) 
+coTo ui = \ send -> ui (send . f) 
+
+fa :: ( Co ((Store Int)) a) -> ( Co (StoreT String (Store Int)) a)
+fa (Co cow) = Co $ \ w -> (cow (f' w))
+
+f :: ( Co ((Store Int)) ()) -> ( Co (StoreT String (Store Int)) ())
+f (Co cow) = Co $ \ w -> (cow (f' w))
+
+f' :: StoreT String (Store Int) ~> (Store Int)
+f' tt' = (\ f -> f (snd (runStoreT tt'))) <$> (fst (runStoreT tt'))
+
+c2 :: Store Int ((( Co (StoreT String (Store Int)) ()) -> IO ()) -> IO ())
+c2 = undefined
+
+
+-- ui :: ((( Co (StoreT String (Store Int)) ()) -> IO ()) -> IO ())
+-- ui = undefined
+
+tt' :: StoreT String (Store Int) (IO ())
+tt'  = StoreT (store ( \ i st -> print ((length st)) ) 12) "test"
+
+
