@@ -173,11 +173,19 @@ fs n = Cons (render n) (fs (n + 1))
 s3 :: Co Stream ()
 s3 = seqm 15 ()
 
-explore :: (Comonad w) => Component w -> IO ()
-explore component = do
+explore = explore1 (pure "")
+
+
+explore1 :: (Comonad w) => Co w String -> Component w -> IO ()
+explore1 elcap component = do
   state <- newIORef component
   replicateM_ 3 $ do
-    let send action = modifyIORef state (\s -> (runCo action (extend const s)))
+    let send action = do 
+                            modifyIORef state (\s -> (runCo action (extend const s)))
+                            st  <- readIORef state
+                            s <- pure $ pairCo (\ a b -> b) st (elcap)
+                            print (show s)
+                            pure unit
     comp <- readIORef state
     extract comp send
 
@@ -975,4 +983,34 @@ c2 = undefined
 tt' :: StoreT String (Store Int) (IO ())
 tt'  = StoreT (store ( \ i st -> print ((length st)) ) 12) "test"
 
+type Unit = ()
 
+liftBox2 :: forall a. (UI (Co (Store Int) a ))  -> (UI (Co (StoreT Int (Store Int)) a ))
+liftBox2 = ( \ ui h -> ui ( \ coe -> h (( \ cow -> co (\ w -> (runCo cow) (lower w))) coe) ) )
+
+
+liftBox3 :: forall w a. (Comonad w) => (Co w a ) -> (Co (StoreT Int w) a )
+liftBox3 = (( \ cow -> co (\ w -> (runCo cow) (lower w))) )
+
+
+type Pairing f g = forall a b c. (a -> b -> c) -> f a -> g b -> c
+
+pair :: Pairing Sequence Stream 
+pair f (End a) (Cons b _ )=f a b
+pair f (Next next) (Cons _ stream ) = pair f next stream
+
+st1 :: Stream Int 
+st1 = unflds 0 (+1)
+
+q1 :: Sequence Int
+q1 = msqs 3 100
+
+pairCo ::  Functor w => Pairing w (Co w)
+pairCo f w cow = runCo cow (fmap f w)
+
+unit = ()
+
+stt = storeTexample
+
+costt :: Co  (StoreT String (Store Int) ) Unit
+costt = pure unit
