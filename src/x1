@@ -1,0 +1,463 @@
+cat c1
+Chain INPUT (policy DROP 0 packets, 0 bytes)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 ACCEPT     41   --  *      *       0.0.0.0/0            0.0.0.0/0           
+      43     3619 ACCEPT     all  --  lo     *       0.0.0.0/0            0.0.0.0/0           
+     637    64116 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0           state RELATED,ESTABLISHED 
+      35     1622 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0           state INVALID LOG flags 6 level 4 prefix `INVALID input(DROP): ' 
+      35     1622 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0           state INVALID 
+      14     1089 ACCEPT     all  --  eth4   *       10.1.10.0/24         0.0.0.0/0           
+       0        0 DROP       all  --  eth4   *       172.16.0.0/12        0.0.0.0/0           
+       0        0 DROP       all  --  eth4   *       192.168.0.0/16       0.0.0.0/0           
+       0        0 DROP       all  --  eth4   *       240.0.0.0/5          0.0.0.0/0           
+       0        0 DROP       all  --  eth4   *       0.0.0.0/0            0.0.0.0             /* c5s */ 
+       0        0 DROP       all  --  eth1   *       0.0.0.0/0            0.0.0.0             /* c5s */ 
+       0        0 DROP       all  --  eth2   *       0.0.0.0/0            0.0.0.0             /* c5s */ 
+       1       36 DROP      !udp  --  *      *       0.0.0.0/0            224.0.0.0/4         
+       0        0 DROP       udp  --  eth1   *       0.0.0.0/0            192.168.200.255     
+       0        0 DROP       udp  --  eth5   *       0.0.0.0/0            192.168.207.255     
+       0        0 DROP       udp  --  eth2   *       0.0.0.0/0            192.168.209.255     
+       0        0 icmpRules  icmp --  *      *       0.0.0.0/0            0.0.0.0/0           
+      25     4629 scanKill   tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           
+       0        0 zero2fire  all  --  eth1   *       192.168.0.0/24       0.0.0.0/0           
+       0        0 tunGDM2fire  all  --  tunGDM *       0.0.0.0/0            0.0.0.0/0           
+       0        0 tun962fire  all  --  tun96  *       0.0.0.0/0            0.0.0.0/0           
+      17     4246 pub2fire   all  --  eth4   *       0.0.0.0/0            50.77.164.114       
+       0        0 pub2fire   all  --  eth4   *       0.0.0.0/0            50.77.164.122       
+       6      240 pub2fire2  all  --  eth4   *       0.0.0.0/0            50.77.164.115       
+       0        0 pub2fire2  all  --  eth4   *       0.0.0.0/0            50.77.164.125       
+     110     7908 lan2fire   all  --  eth1   *       192.168.200.0/24     0.0.0.0/0           
+       1       60 pub2lanI   all  --  eth4   *       0.0.0.0/0            192.168.200.2       
+       0        0 dmz2fire   all  --  eth5   *       192.168.207.0/24     192.168.207.1       
+       0        0 kvm2fire   all  --  eth2   *       192.168.209.0/24     192.168.209.1       
+      19     4806 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0           LOG flags 6 level 4 prefix `INPUT(smartReject): ' 
+      19     4806 smartReject  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain FORWARD (policy DROP 0 packets, 0 bytes)
+    pkts      bytes target     prot opt in     out     source               destination         
+   27664 27261106 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0           state RELATED,ESTABLISHED 
+      28     6380 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0           state INVALID LOG flags 6 level 4 prefix `INVALID forward(DROP): ' 
+      28     6380 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0           state INVALID 
+       0        0 ACCEPT     all  --  eth1   eth4.10  192.168.200.0/24     10.1.10.0/24        
+       0        0 DROP       all  --  eth1   eth4    0.0.0.0/0            172.16.0.0/12       
+       0        0 DROP       all  --  eth1   eth4    0.0.0.0/0            192.168.0.0/16      
+       0        0 DROP       all  --  eth1   eth4    0.0.0.0/0            240.0.0.0/5         
+       0        0 DROP       all  --  eth5   eth4    0.0.0.0/0            172.16.0.0/12       
+       0        0 DROP       all  --  eth5   eth4    0.0.0.0/0            192.168.0.0/16      
+       0        0 DROP       all  --  eth5   eth4    0.0.0.0/0            240.0.0.0/5         
+       0        0 DROP       all  --  eth2   eth4    0.0.0.0/0            172.16.0.0/12       
+       0        0 DROP       all  --  eth2   eth4    0.0.0.0/0            192.168.0.0/16      
+       0        0 DROP       all  --  eth2   eth4    0.0.0.0/0            240.0.0.0/5         
+       0        0 DROP       all  --  *      *       0.0.0.0/0            255.255.255.255     
+       0        0 DROP      !udp  --  *      *       0.0.0.0/0            224.0.0.0/4         
+       0        0 DROP       icmp --  *      eth4    0.0.0.0/0            0.0.0.0/0           icmp type 3 
+       0        0 ACCEPT     tcp  --  *      eth4    0.0.0.0/0            0.0.0.0/0           ctstate RELATED helper match "ftp" tcp dpts:1024:65535 
+       0        0 ACCEPT     tcp  --  eth4   *       0.0.0.0/0            0.0.0.0/0           ctstate RELATED helper match "ftp" tcp dpts:1024:65535 
+      10      888 icmpRules  icmp --  *      *       0.0.0.0/0            0.0.0.0/0           
+     143     8277 scanKill   tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           
+      12     1272 lan2zero   all  --  eth1   eth1    192.168.200.0/24     192.168.0.0/24      
+       0        0 tunGDM2dmzVynet  all  --  tunGDM eth5    0.0.0.0/0            192.168.207.20      
+       0        0 tunGDM2dmz  all  --  tunGDM eth5    0.0.0.0/0            192.168.207.0/24    
+       0        0 tunGDM2lan  all  --  tunGDM eth1    0.0.0.0/0            192.168.200.0/24    
+       0        0 lan2tunGDM  all  --  eth1   tunGDM  192.168.200.0/24     0.0.0.0/0           
+       0        0 tun962dmz  all  --  tun96  eth5    0.0.0.0/0            192.168.207.0/24    
+       0        0 tun962kvm  all  --  tun96  eth2    0.0.0.0/0            192.168.209.0/24    
+       0        0 tun962lan  all  --  tun96  eth1    0.0.0.0/0            192.168.200.0/24    
+       0        0 lan2tun96  all  --  eth1   tun96   192.168.200.0/24     0.0.0.0/0           
+       0        0 tun962lan  all  --  tun96  tunGDM  0.0.0.0/0            0.0.0.0/0           
+     148     9394 lan2pub    all  --  eth1   eth4    192.168.200.0/24     0.0.0.0/0           
+       0        0 lan2dmzVynet  all  --  eth1   eth5    192.168.200.0/24     192.168.207.20      
+       0        0 lan2dmz    all  --  eth1   eth5    192.168.200.0/24     0.0.0.0/0           
+       0        0 dmz2pub    all  --  eth5   eth4    0.0.0.0/0            0.0.0.0/0           
+       0        0 pub2dmz    all  --  *      eth5    0.0.0.0/0            192.168.207.30      
+       0        0 pub2wpdmz  all  --  *      eth5    0.0.0.0/0            192.168.207.31      
+       4      164 pub2dmzVynet  all  --  *      eth5    0.0.0.0/0            192.168.207.20      
+       4      164 pub2dmz    all  --  *      eth5    0.0.0.0/0            192.168.207.35      
+       0        0 fire2pub2  all  --  eth1   eth4:2  192.168.200.0/24     0.0.0.0/0           
+       0        0 lan2kvm    all  --  eth1   eth2    192.168.200.0/24     0.0.0.0/0           
+       0        0 kvm2pub    all  --  eth2   eth4    192.168.209.0/24     0.0.0.0/0           
+       0        0 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0           LOG flags 6 level 4 prefix `FORWARD(smartReject): ' 
+       0        0 smartReject  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain OUTPUT (policy DROP 0 packets, 0 bytes)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 ACCEPT     41   --  *      *       0.0.0.0/0            0.0.0.0/0           
+      43     3619 ACCEPT     all  --  *      lo      0.0.0.0/0            0.0.0.0/0           
+     587   205198 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0           state RELATED,ESTABLISHED 
+       0        0 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0           state INVALID LOG flags 6 level 4 prefix `INVALID output(DROP): ' 
+       0        0 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0           state INVALID 
+       0        0 ACCEPT     all  --  *      eth4    0.0.0.0/0            10.1.10.0/24        
+       0        0 DROP       all  --  *      eth4    0.0.0.0/0            172.16.0.0/12       
+       0        0 DROP       all  --  *      eth4    0.0.0.0/0            192.168.0.0/16      
+       0        0 DROP       all  --  *      eth4    0.0.0.0/0            240.0.0.0/5         
+       0        0 DROP       all  --  *      eth4   !50.77.164.112/28     0.0.0.0/0           /* c1 */ 
+       0        0 DROP       all  --  *      eth1   !192.168.200.2        0.0.0.0/0           /* c3 */ 
+       0        0 DROP       all  --  *      eth5   !192.168.207.1        0.0.0.0/0           /* c5 */ 
+       0        0 DROP       all  --  *      eth2   !192.168.209.1        0.0.0.0/0           /* c6 */ 
+       0        0 icmpRules  icmp --  *      *       0.0.0.0/0            0.0.0.0/0           
+       2      436 fire2zero  all  --  *      eth1    0.0.0.0/0            0.0.0.0/0           
+       0        0 fire2tunGDM  all  --  *      tunGDM  0.0.0.0/0            0.0.0.0/0           
+       0        0 fire2tun96  all  --  *      tun96   0.0.0.0/0            0.0.0.0/0           
+     130    10315 fire2pub   all  --  *      eth4    50.77.164.114        0.0.0.0/0           
+       0        0 fire2pub   all  --  *      eth4    50.77.164.122        0.0.0.0/0           
+       0        0 fire2pub2  all  --  *      eth4    50.77.164.115        0.0.0.0/0           
+       0        0 fire2pub2  all  --  *      eth4    50.77.164.125        0.0.0.0/0           
+       0        0 fire2lan   all  --  *      eth1    192.168.200.2        192.168.200.0/24    
+       0        0 fire2dmz   all  --  *      eth5    192.168.207.1        192.168.207.0/24    
+       0        0 fire2kvm   all  --  *      eth2    192.168.209.1        192.168.209.0/24    
+       0        0 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0           LOG flags 6 level 4 prefix `OUTPUT(smartReject): ' 
+       0        0 smartReject  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain dmz2fire (1 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:32769:65535 dpts:33434:33523 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:1024:65535 dpt:123 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:0:1023 dpt:123 state NEW 
+       0        0 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0           LOG flags 6 level 4 prefix `dmz2fire(smtReject): ' 
+       0        0 smartReject  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain dmz2lan (0 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1020:65535 multiport dports 22,222,2222 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 multiport dports 80,8080,8000,443,3000 state NEW 
+       0        0 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0           LOG flags 6 level 4 prefix `dmz2lan(smtReject): ' 
+       0        0 smartReject  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain dmz2pub (1 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:32769:65535 dpts:33434:33523 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp dpt:53 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp dpt:53 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 multiport dports 25,587,465 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 dpt:11371 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 dpt:21 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 multiport dports 80,8080,8000,443,3000 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 dpt:43 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:1024:65535 dpt:123 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:0:1023 dpt:123 state NEW 
+       0        0 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0           LOG flags 6 level 4 prefix `dmz2pub(smtReject): ' 
+       0        0 smartReject  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain fire2dmz (1 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:32769:65535 dpts:33434:33523 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 multiport dports 80,8080,8000,443,3000 state NEW 
+       0        0 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0           LOG flags 6 level 4 prefix `fire2dmz(smtReject): ' 
+       0        0 smartReject  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain fire2kvm (1 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:32769:65535 dpts:33434:33523 state NEW 
+       0        0 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0           LOG flags 6 level 4 prefix `fire2kvm(smtReject): ' 
+       0        0 smartReject  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain fire2lan (1 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:32769:65535 dpts:33434:33523 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spt:67 dpt:68 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1020:65535 multiport dports 22,222,2222 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 multiport dports 80,8080,8000,443,3000 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 dpt:9100 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:1024:65535 dpt:123 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:0:1023 dpt:123 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:1024:65535 dpt:88 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spt:88 dpt:88 state NEW 
+       0        0 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0           LOG flags 6 level 4 prefix `fire2lan(smtReject): ' 
+       0        0 smartReject  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain fire2pub (2 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:32769:65535 dpts:33434:33523 state NEW 
+     128    10206 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp dpt:53 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp dpt:53 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 dpt:25 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1020:65535 multiport dports 22,222,2222 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 dpt:11371 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 dpt:21 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 multiport dports 80,8080,8000,443,3000 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 dpt:43 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:1024:65535 dpt:123 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:0:1023 dpt:123 state NEW 
+       1       69 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:1024:65535 dpt:1194 state NEW 
+       1       40 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0           LOG flags 6 level 4 prefix `fire2pub(smtReject): ' 
+       1       40 smartReject  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain fire2pub2 (3 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 dpt:3306 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1020:65535 multiport dports 22,222,2222 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 multiport dports 80,8080,8000,443,3000 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spt:500 dpt:500 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spt:4500 dpt:4500 state NEW 
+       0        0 ACCEPT     esp  --  *      *       0.0.0.0/0            0.0.0.0/0           
+       0        0 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0           LOG flags 6 level 4 prefix `fire2pub2(smtReject): ' 
+       0        0 smartReject  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain fire2tun96 (1 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain fire2tunGDM (1 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+       0        0 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0           LOG flags 6 level 4 prefix `fire2tunGDM(smtReject): ' 
+       0        0 smartReject  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain fire2zero (1 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:32769:65535 dpts:33434:33523 state NEW 
+       1      328 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spt:67 dpt:68 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1020:65535 multiport dports 22,222,2222 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 multiport dports 80,8080,8000,443,3000 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:1024:65535 dpt:88 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spt:88 dpt:88 state NEW 
+       1      108 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0           LOG flags 6 level 4 prefix `fire2zero(smtReject): ' 
+       1      108 smartReject  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain icmpRules (3 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 DROP       icmp -f  *      *       0.0.0.0/0            0.0.0.0/0           
+      10      888 ACCEPT     icmp --  *      *       0.0.0.0/0            0.0.0.0/0           icmp type 8 
+       0        0 ACCEPT     icmp --  *      *       0.0.0.0/0            0.0.0.0/0           icmp type 4 
+       0        0 ACCEPT     icmp --  *      *       0.0.0.0/0            0.0.0.0/0           icmp type 12 
+       0        0 ACCEPT     icmp --  *      *       0.0.0.0/0            0.0.0.0/0           icmp type 3 
+       0        0 ACCEPT     icmp --  *      *       0.0.0.0/0            0.0.0.0/0           icmp type 3 code 4 
+       0        0 smartReject  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain kvm2fire (1 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:32769:65535 dpts:33434:33523 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp dpt:53 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp dpt:53 state NEW 
+       0        0 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0           LOG flags 6 level 4 prefix `kvm2fire(smtReject): ' 
+       0        0 smartReject  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain kvm2pub (1 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:32769:65535 dpts:33434:33523 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp dpt:53 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp dpt:53 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 dpt:9418 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 multiport dports 25,587,465 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1020:65535 multiport dports 22,222,2222 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 dpt:11371 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 dpt:21 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 multiport dports 80,8080,8000,443,3000 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 dpt:43 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:1024:65535 dpt:123 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:0:1023 dpt:123 state NEW 
+       0        0 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0           LOG flags 6 level 4 prefix `kvm2pub(smtReject): ' 
+       0        0 smartReject  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain lan2dmz (1 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:32769:65535 dpts:33434:33523 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1020:65535 multiport dports 22,222,2222 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 multiport dports 80,8080,8000,443,3000 state NEW 
+       0        0 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0           LOG flags 6 level 4 prefix `lan2dmz(smtReject): ' 
+       0        0 smartReject  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain lan2dmzVynet (1 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 multiport dports 80,5001,554,15947 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:1024:65535 multiport dports 1024:65535,554,15947 state NEW 
+       0        0 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0           LOG flags 6 level 4 prefix `lan2dmzVynet(smtReject): ' 
+       0        0 smartReject  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain lan2fire (1 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:32769:65535 dpts:33434:33523 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spt:68 dpt:67 state NEW 
+     102     7480 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp dpt:53 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp dpt:53 state NEW 
+       0        0 DROP       udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp multiport dports 137,138,17500,5353,19540,3289 state NEW 
+       2      152 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1020:65535 multiport dports 22,222,2222 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:1024:65535 dpt:123 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:0:1023 dpt:123 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:1024:65535 dpt:1194 state NEW 
+       6      276 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0           LOG flags 6 level 4 prefix `lan2fire(smtReject): ' 
+       6      276 smartReject  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain lan2kvm (1 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:32769:65535 dpts:33434:33523 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1020:65535 multiport dports 22,222,2222 state NEW 
+       0        0 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0           LOG flags 6 level 4 prefix `lan2kvm(smtReject): ' 
+       0        0 smartReject  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain lan2pub (1 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:32769:65535 dpts:33434:33523 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 dpts:41794:41797 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:1024:65535 dpt:41794 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 dpt:55555 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp dpt:53 state NEW 
+       1       60 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp dpt:53 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 dpt:389 state NEW 
+       1      299 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:1024:65535 multiport dports 1718,1719,49152 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 multiport dports 1718,1719,49152 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 dpt:9418 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 multiport dports 25,587,465 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 multiport dports 143,993 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 multiport dports 110,995 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 dpt:3306 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1020:65535 multiport dports 22,222,2222 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1020:65535 dpt:47788 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 dpt:11371 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 dpt:21 state NEW 
+     130     7602 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 multiport dports 80,8080,8000,443,3000 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 dpt:8443 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 multiport dports 5222,5223 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 dpt:43 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 dpt:23 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 multiport dports 5050,5282,5190,1863,8880 state NEW 
+       1       76 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:1024:65535 dpt:123 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:0:1023 dpt:123 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:1024:65535 dpt:1194 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:1024:65535 multiport dports 500,4500 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:1024:65535 multiport dports 5060:5070,1719,2776,2422,36000:36030 state NEW 
+       1      126 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 multiport dports 5060:5070,2776,2422,36000:36030 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 dpt:1935 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 multiport dports 7001,5060,3478,5000,3011,3000,3333,9000 state NEW 
+       1       41 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 multiport dports 5228,8192,8337 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 multiport dports 11112,34251,8443 state NEW 
+      13     1190 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0           LOG flags 6 level 4 prefix `lan2pub(smtReject): ' 
+      13     1190 smartReject  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain lan2tun96 (1 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain lan2tunGDM (1 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+       0        0 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0           LOG flags 6 level 4 prefix `lan2tunGDM(smtReject): ' 
+       0        0 smartReject  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain lan2zero (1 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+      12     1272 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:32769:65535 dpts:33434:33523 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1020:65535 multiport dports 22,222,2222 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 dpt:21 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 multiport dports 80,8080,8000,443,3000 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 dpt:23 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 dpt:1935 state NEW 
+       0        0 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0           LOG flags 6 level 4 prefix `lan2zero(smtReject): ' 
+       0        0 smartReject  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain pub2dmz (2 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 multiport dports 80,8080,8000,443,3000 state NEW 
+       4      164 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0           LOG flags 6 level 4 prefix `pub2dmz(smtReject): ' 
+       4      164 smartReject  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain pub2dmzVynet (1 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 multiport dports 554,15947 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:1024:65535 multiport dports 1024:65535,554,15947 state NEW 
+       4      164 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0           LOG flags 6 level 4 prefix `pub2dmzVynet(smtReject): ' 
+       4      164 smartReject  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain pub2fire (2 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:32769:65535 dpts:33434:33523 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:1024:65535 dpt:1194 state NEW 
+      17     4246 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0           LOG flags 6 level 4 prefix `pub2fire(smtReject): ' 
+      17     4246 smartReject  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain pub2fire2 (2 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:32769:65535 dpts:33434:33523 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spt:500 dpt:500 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spt:4500 dpt:4500 state NEW 
+       0        0 ACCEPT     esp  --  *      *       0.0.0.0/0            0.0.0.0/0           
+       6      240 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0           LOG flags 6 level 4 prefix `pub2fire2(smtReject): ' 
+       6      240 smartReject  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain pub2lanI (1 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+       1       60 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1020:65535 multiport dports 22,222,2222 state NEW 
+       0        0 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0           LOG flags 6 level 4 prefix `pub2lanI(smtReject): ' 
+       0        0 smartReject  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain pub2wpdmz (1 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1020:65535 multiport dports 22,222,2222 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 multiport dports 80,8080,8000,443,3000 state NEW 
+       0        0 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0           LOG flags 6 level 4 prefix `pub2wpdmz(smtReject): ' 
+       0        0 smartReject  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain scanKill (2 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp flags:0x3F/0x00 
+       0        0 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp flags:0x03/0x03 
+       0        0 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp flags:0x06/0x06 
+       0        0 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp flags:0x05/0x05 
+       0        0 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp flags:0x11/0x01 
+       0        0 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp flags:0x18/0x08 
+       0        0 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp flags:0x30/0x20 
+
+Chain smartReject (34 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+      33     4973 REJECT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           reject-with tcp-reset 
+      37     6221 REJECT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           reject-with icmp-port-unreachable 
+       1       40 REJECT     all  --  *      *       0.0.0.0/0            0.0.0.0/0           reject-with icmp-proto-unreachable 
+
+Chain tun962dmz (1 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain tun962fire (1 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain tun962kvm (1 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain tun962lan (2 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain tunGDM2dmz (1 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1020:65535 multiport dports 22,222,2222 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 multiport dports 80,8080,8000,443,3000 state NEW 
+       0        0 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0           LOG flags 6 level 4 prefix `tunGDM2dmz(smtReject): ' 
+       0        0 smartReject  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain tunGDM2dmzVynet (1 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp spts:1024:65535 multiport dports 80,5001,554,15947 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:1024:65535 multiport dports 1024:65535,554,15947 state NEW 
+       0        0 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0           LOG flags 6 level 4 prefix `tunGDM2dmzVynet(smtReject): ' 
+       0        0 smartReject  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain tunGDM2fire (1 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp dpt:53 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp dpt:53 state NEW 
+       0        0 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0           LOG flags 6 level 4 prefix `tunGDM2fire(smtReject): ' 
+       0        0 smartReject  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain tunGDM2lan (1 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp dpt:53 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp dpt:53 state NEW 
+       0        0 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0           LOG flags 6 level 4 prefix `tunGDM2lan(smtReject): ' 
+       0        0 smartReject  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain zero2fire (1 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:32769:65535 dpts:33434:33523 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp dpt:53 state NEW 
+       0        0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp dpt:53 state NEW 
+       0        0 DROP       udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp multiport dports 137,138,17500,5353,19540,3289 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:1024:65535 dpt:123 state NEW 
+       0        0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0           udp spts:0:1023 dpt:123 state NEW 
+       0        0 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0           LOG flags 6 level 4 prefix `zero2fire(smtReject): ' 
+       0        0 smartReject  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+[root@madison petr]# 
