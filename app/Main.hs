@@ -12,12 +12,15 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-
+{-# LANGUAGE PartialTypeSignatures #-}
 
 module Main where
 
+
+import Prelude hiding (map)
 import System.IO.Unsafe
-import Control.Arrow
+import Control.Arrow hiding ((<<<))
+import qualified Control.Arrow  as A
 import Control.Comonad
 import Control.Monad.Cont
 import Control.Comonad.Store
@@ -30,12 +33,13 @@ import Data.Function ((&))
 import Data.Functor.Day
 import Data.Functor.Identity
 import Data.IORef
-import Data.Map
+import Data.Map hiding (map)
 import Lib
 import Sequence
 import Stream
 import qualified Data.ByteString as B
 import Control.Comonad.Cofree
+import Control.Comonad.Trans.Class
 
 import Foreign.Ptr
 import Foreign.C
@@ -949,7 +953,9 @@ storeTexample = StoreT (fmap stateToProp (fmap coTo ( c1 "c1"))) "test"
 
 stateToProp :: ((( Co (StoreT String (Store Int)) ()) -> IO ()) -> IO ()) 
             -> (String -> ((( Co (StoreT String (Store Int)) ()) -> IO ()) -> IO ()))
-stateToProp  a = const ( \ h -> a (h . gg1 ))
+stateToProp  a = f where -- s ( \ h -> a (h . gg1 )) where 
+  f "test" = ( \ h -> a (h . gg1 ))
+  f _ =  ( \ h -> a (h . gg1 ))
 
 gg1 :: ( Co (StoreT String (Store Int)) ()) -> ( Co (StoreT String (Store Int)) ())
 gg1 a = do 
@@ -982,10 +988,36 @@ c2 = undefined
 tt' :: StoreT String (Store Int) (IO ())
 tt'  = StoreT (store ( \ i st -> print ((length st)) ) 12) "test"
 
+map :: (Functor f) => (a -> b) -> f a -> f b
+map = fmap 
+
+(<<<) = (.)
+
+type Unit = ()
+unit = ()
+
+storeTexample1 :: Component (StoreT Int (Store Int))
+storeTexample1 =  (StoreT  (( liftBox (c1 "test") ) =>> render ) 10 )  where --  =>> (render <<< liftBox) ) 10 ) where -- (Tuple box 0))) where
+  render :: Store Int ( Int ->  (UI (Co (StoreT Int (Store Int)) Unit ))) -> Int -> (UI (Co (StoreT Int (Store Int)) Unit ))
+  render comp mod send = pure unit
+  
 
 
 
+liftBox :: Store Int (UI (Co (Store Int) Unit ))  -> Store Int ( Int ->  (UI (Co (StoreT Int (Store Int)) Unit )))
+liftBox box = map ( \ ui' -> ( \ i -> (liftBox2 ui') ) ) box 
 
+liftBox2 :: (UI (Co (Store Int) Unit ))  -> (UI (Co (StoreT Int (Store Int)) Unit ))
+liftBox2 = ( \ ui h -> ui ( \ coe -> h (liftBox3 coe) ) )
+
+liftBox3 :: Co (Store Int) Unit -> Co (StoreT Int (Store Int)) Unit
+liftBox3 cow = co $ \ w -> (runCo cow) (lower w)
+
+s1aa :: State Int Int
+s1aa = state ( \ s -> (s, s) ) 
+
+st1 :: StateT String (State Int) Int
+st1 = lift s1aa
 
 
 
