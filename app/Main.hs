@@ -25,9 +25,7 @@ import  qualified         Data.ByteString as B
 
 import qualified Foreign.Marshal.Array as M
 
-
 foreign import ccall "parse_refresh_rate" parseRefreshRate :: Ptr Word8 -> IO Int
-
 
 
 main = do 
@@ -36,7 +34,6 @@ main = do
   f p
   f p
   f p
-
 
 f p = do
   parseRefreshRate p

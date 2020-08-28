@@ -31,6 +31,7 @@ dependencies:
 - hexstring
 - hex
 - text
+- free 
 
 library:
   source-dirs: src
