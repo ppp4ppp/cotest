@@ -1,11 +1,11 @@
-cat x1
+
 Chain INPUT (policy DROP 0 packets, 0 bytes)
     pkts      bytes target     prot opt in     out     source               destination         
        0        0 ACCEPT     ipv6 --  any    any     anywhere             anywhere            
-     945    80643 ACCEPT     all  --  lo     any     anywhere             anywhere            
-    3077   266856 ACCEPT     all  --  any    any     anywhere             anywhere            state RELATED,ESTABLISHED 
-      99     3988 LOG        all  --  any    any     anywhere             anywhere            state INVALID LOG level warning tcp-options ip-options prefix `INVALID input(DROP): ' 
-      99     3988 DROP       all  --  any    any     anywhere             anywhere            state INVALID 
+    1093    93246 ACCEPT     all  --  lo     any     anywhere             anywhere            
+    3177   274826 ACCEPT     all  --  any    any     anywhere             anywhere            state RELATED,ESTABLISHED 
+     103     4152 LOG        all  --  any    any     anywhere             anywhere            state INVALID LOG level warning tcp-options ip-options prefix `INVALID input(DROP): ' 
+     103     4152 DROP       all  --  any    any     anywhere             anywhere            state INVALID 
      142     9517 ACCEPT     all  --  eth4   any     10.1.10.0/24         anywhere            
        0        0 DROP       all  --  eth4   any     172.16.0.0/12        anywhere            
        0        0 DROP       all  --  eth4   any     192.168.0.0/16       anywhere            
@@ -13,29 +13,29 @@ Chain INPUT (policy DROP 0 packets, 0 bytes)
        0        0 DROP       all  --  eth4   any     anywhere             default             /* c5s */ 
        0        0 DROP       all  --  eth1   any     anywhere             default             /* c5s */ 
        0        0 DROP       all  --  eth2   any     anywhere             default             /* c5s */ 
-      11      396 DROP      !udp  --  any    any     anywhere             base-address.mcast.net/4 
+      12      432 DROP      !udp  --  any    any     anywhere             base-address.mcast.net/4 
        6     1490 DROP       udp  --  eth1   any     anywhere             192.168.200.255     
        0        0 DROP       udp  --  eth5   any     anywhere             192.168.207.255     
        0        0 DROP       udp  --  eth2   any     anywhere             192.168.209.255     
-      27     2044 icmpRules  icmp --  any    any     anywhere             anywhere            
-      70     3633 scanKill   tcp  --  any    any     anywhere             anywhere            
+      28     2128 icmpRules  icmp --  any    any     anywhere             anywhere            
+      73     3757 scanKill   tcp  --  any    any     anywhere             anywhere            
        0        0 zero2fire  all  --  eth1   any     192.168.0.0/24       anywhere            
        0        0 tunGDM2fire  all  --  tunGDM any     anywhere             anywhere            
        0        0 tun962fire  all  --  tun96  any     anywhere             anywhere            
-      37     2034 pub2fire   all  --  eth4   any     anywhere             50-77-164-114-static.hfc.comcastbusiness.net 
+      39     2118 pub2fire   all  --  eth4   any     anywhere             50-77-164-114-static.hfc.comcastbusiness.net 
        0        0 pub2fire   all  --  eth4   any     anywhere             50-77-164-122-static.hfc.comcastbusiness.net 
-      25     1064 pub2fire2  all  --  eth4   any     anywhere             50-77-164-115-static.hfc.comcastbusiness.net 
+      26     1104 pub2fire2  all  --  eth4   any     anywhere             50-77-164-115-static.hfc.comcastbusiness.net 
        0        0 pub2fire2  all  --  eth4   any     anywhere             50-77-164-125-static.hfc.comcastbusiness.net 
-     156    18475 lan2fire   all  --  eth1   any     192.168.200.0/24     anywhere            
+     160    19517 lan2fire   all  --  eth1   any     192.168.200.0/24     anywhere            
        6      360 pub2lanI   all  --  eth4   any     anywhere             madison.gdm.nf      
        0        0 dmz2fire   all  --  eth5   any     192.168.207.0/24     192.168.207.1       
        0        0 kvm2fire   all  --  eth2   any     192.168.209.0/24     192.168.209.1       
-     142    33370 LOG        all  --  any    any     anywhere             anywhere            LOG level warning tcp-options ip-options prefix `INPUT(smartReject): ' 
-     142    33370 smartReject  all  --  any    any     anywhere             anywhere            
+     146    34310 LOG        all  --  any    any     anywhere             anywhere            LOG level warning tcp-options ip-options prefix `INPUT(smartReject): ' 
+     146    34310 smartReject  all  --  any    any     anywhere             anywhere            
 
 Chain FORWARD (policy DROP 0 packets, 0 bytes)
     pkts      bytes target     prot opt in     out     source               destination         
-    4187   701866 ACCEPT     all  --  any    any     anywhere             anywhere            state RELATED,ESTABLISHED 
+    4254   713390 ACCEPT     all  --  any    any     anywhere             anywhere            state RELATED,ESTABLISHED 
       31     2306 LOG        all  --  any    any     anywhere             anywhere            state INVALID LOG level warning tcp-options ip-options prefix `INVALID forward(DROP): ' 
       31     2306 DROP       all  --  any    any     anywhere             anywhere            state INVALID 
        0        0 ACCEPT     all  --  eth1   eth4.10  192.168.200.0/24     10.1.10.0/24        
@@ -54,7 +54,7 @@ Chain FORWARD (policy DROP 0 packets, 0 bytes)
        0        0 ACCEPT     tcp  --  any    eth4    anywhere             anywhere            ctstate RELATED helper match "ftp" tcp dpts:1024:65535 
        0        0 ACCEPT     tcp  --  eth4   any     anywhere             anywhere            ctstate RELATED helper match "ftp" tcp dpts:1024:65535 
        3      128 icmpRules  icmp --  any    any     anywhere             anywhere            
-     333    17306 scanKill   tcp  --  any    any     anywhere             anywhere            
+     364    18882 scanKill   tcp  --  any    any     anywhere             anywhere            
        0        0 lan2zero   all  --  eth1   eth1    192.168.200.0/24     192.168.0.0/24      
        0        0 tunGDM2dmzVynet  all  --  tunGDM eth5    anywhere             192.168.207.20      
        0        0 tunGDM2dmz  all  --  tunGDM eth5    anywhere             192.168.207.0/24    
@@ -65,25 +65,25 @@ Chain FORWARD (policy DROP 0 packets, 0 bytes)
        0        0 tun962lan  all  --  tun96  eth1    anywhere             192.168.200.0/24    
        0        0 lan2tun96  all  --  eth1   tun96   192.168.200.0/24     anywhere            
        0        0 tun962lan  all  --  tun96  tunGDM  anywhere             anywhere            
-     138     8713 lan2pub    all  --  eth1   eth4    192.168.200.0/24     anywhere            
+     140     8825 lan2pub    all  --  eth1   eth4    192.168.200.0/24     anywhere            
        0        0 lan2dmzVynet  all  --  eth1   eth5    192.168.200.0/24     192.168.207.20      
        0        0 lan2dmz    all  --  eth1   eth5    192.168.200.0/24     anywhere            
        0        0 dmz2pub    all  --  eth5   eth4    anywhere             anywhere            
        0        0 pub2dmz    all  --  any    eth5    anywhere             192.168.207.30      
        0        0 pub2wpdmz  all  --  any    eth5    anywhere             192.168.207.31      
-      40     1688 pub2dmzVynet  all  --  any    eth5    anywhere             192.168.207.20      
-      43     1905 pub2dmz    all  --  any    eth5    anywhere             192.168.207.35      
+      42     1768 pub2dmzVynet  all  --  any    eth5    anywhere             192.168.207.20      
+      45     1989 pub2dmz    all  --  any    eth5    anywhere             192.168.207.35      
        0        0 fire2pub2  all  --  eth1   eth4:2  192.168.200.0/24     anywhere            
        0        0 lan2kvm    all  --  eth1   eth2    192.168.200.0/24     anywhere            
        0        0 kvm2pub    all  --  eth2   eth4    192.168.209.0/24     anywhere            
-     129     6708 LOG        all  --  any    any     anywhere             anywhere            LOG level warning tcp-options ip-options prefix `FORWARD(smartReject): ' 
-     129     6708 smartReject  all  --  any    any     anywhere             anywhere            
+     154     8008 LOG        all  --  any    any     anywhere             anywhere            LOG level warning tcp-options ip-options prefix `FORWARD(smartReject): ' 
+     154     8008 smartReject  all  --  any    any     anywhere             anywhere            
 
 Chain OUTPUT (policy DROP 0 packets, 0 bytes)
     pkts      bytes target     prot opt in     out     source               destination         
        0        0 ACCEPT     ipv6 --  any    any     anywhere             anywhere            
-     945    80643 ACCEPT     all  --  any    lo      anywhere             anywhere            
-    2287   500328 ACCEPT     all  --  any    any     anywhere             anywhere            state RELATED,ESTABLISHED 
+    1093    93246 ACCEPT     all  --  any    lo      anywhere             anywhere            
+    2355   505249 ACCEPT     all  --  any    any     anywhere             anywhere            state RELATED,ESTABLISHED 
        0        0 LOG        all  --  any    any     anywhere             anywhere            state INVALID LOG level warning tcp-options ip-options prefix `INVALID output(DROP): ' 
        0        0 DROP       all  --  any    any     anywhere             anywhere            state INVALID 
        0        0 ACCEPT     all  --  any    eth4    anywhere             10.1.10.0/24        
@@ -98,7 +98,7 @@ Chain OUTPUT (policy DROP 0 packets, 0 bytes)
        1      108 fire2zero  all  --  any    eth1    anywhere             anywhere            
        0        0 fire2tunGDM  all  --  any    tunGDM  anywhere             anywhere            
        0        0 fire2tun96  all  --  any    tun96   anywhere             anywhere            
-     336    27292 fire2pub   all  --  any    eth4    50-77-164-114-static.hfc.comcastbusiness.net  anywhere            
+     375    30462 fire2pub   all  --  any    eth4    50-77-164-114-static.hfc.comcastbusiness.net  anywhere            
        0        0 fire2pub   all  --  any    eth4    50-77-164-122-static.hfc.comcastbusiness.net  anywhere            
        1      104 fire2pub2  all  --  any    eth4    50-77-164-115-static.hfc.comcastbusiness.net  anywhere            
        0        0 fire2pub2  all  --  any    eth4    50-77-164-125-static.hfc.comcastbusiness.net  anywhere            
@@ -168,7 +168,7 @@ Chain fire2lan (1 references)
 Chain fire2pub (2 references)
     pkts      bytes target     prot opt in     out     source               destination         
        0        0 ACCEPT     udp  --  any    any     anywhere             anywhere            udp spts:filenet-rpc:65535 dpts:traceroute:33523 state NEW 
-     326    26726 ACCEPT     udp  --  any    any     anywhere             anywhere            udp dpt:domain state NEW 
+     364    29856 ACCEPT     udp  --  any    any     anywhere             anywhere            udp dpt:domain state NEW 
        0        0 ACCEPT     tcp  --  any    any     anywhere             anywhere            tcp dpt:domain state NEW 
        0        0 ACCEPT     tcp  --  any    any     anywhere             anywhere            tcp spts:1024:65535 dpt:smtp state NEW 
        0        0 ACCEPT     tcp  --  any    any     anywhere             anywhere            tcp spts:1020:65535 multiport dports ssh,rsh-spx,EtherNet/IP-1 state NEW 
@@ -179,8 +179,8 @@ Chain fire2pub (2 references)
        0        0 ACCEPT     udp  --  any    any     anywhere             anywhere            udp spts:1024:65535 dpt:ntp state NEW 
        3      228 ACCEPT     udp  --  any    any     anywhere             anywhere            udp spts:0:1023 dpt:ntp state NEW 
        2      138 ACCEPT     udp  --  any    any     anywhere             anywhere            udp spts:1024:65535 dpt:openvpn state NEW 
-       5      200 LOG        all  --  any    any     anywhere             anywhere            LOG level warning tcp-options ip-options prefix `fire2pub(smtReject): ' 
-       5      200 smartReject  all  --  any    any     anywhere             anywhere            
+       6      240 LOG        all  --  any    any     anywhere             anywhere            LOG level warning tcp-options ip-options prefix `fire2pub(smtReject): ' 
+       6      240 smartReject  all  --  any    any     anywhere             anywhere            
 
 Chain fire2pub2 (3 references)
     pkts      bytes target     prot opt in     out     source               destination         
@@ -217,7 +217,7 @@ Chain fire2zero (1 references)
 Chain icmpRules (3 references)
     pkts      bytes target     prot opt in     out     source               destination         
        0        0 DROP       icmp -f  any    any     anywhere             anywhere            
-      30     2172 ACCEPT     icmp --  any    any     anywhere             anywhere            icmp echo-request 
+      31     2256 ACCEPT     icmp --  any    any     anywhere             anywhere            icmp echo-request 
        0        0 ACCEPT     icmp --  any    any     anywhere             anywhere            icmp source-quench 
        0        0 ACCEPT     icmp --  any    any     anywhere             anywhere            icmp parameter-problem 
        0        0 ACCEPT     icmp --  any    any     anywhere             anywhere            icmp destination-unreachable 
@@ -268,15 +268,15 @@ Chain lan2fire (1 references)
     pkts      bytes target     prot opt in     out     source               destination         
        0        0 ACCEPT     udp  --  any    any     anywhere             anywhere            udp spts:filenet-rpc:65535 dpts:traceroute:33523 state NEW 
        6     2470 ACCEPT     udp  --  any    any     anywhere             anywhere            udp spt:bootpc dpt:bootps state NEW 
-      88     6573 ACCEPT     udp  --  any    any     anywhere             anywhere            udp dpt:domain state NEW 
+      90     6727 ACCEPT     udp  --  any    any     anywhere             anywhere            udp dpt:domain state NEW 
        0        0 ACCEPT     tcp  --  any    any     anywhere             anywhere            tcp dpt:domain state NEW 
-      13     7042 DROP       udp  --  any    any     anywhere             anywhere            udp multiport dports netbios-ns,netbios-dgm,17500,mdns,sxuptp,enpc state NEW 
+      14     7884 DROP       udp  --  any    any     anywhere             anywhere            udp multiport dports netbios-ns,netbios-dgm,17500,mdns,sxuptp,enpc state NEW 
        3      244 ACCEPT     tcp  --  any    any     anywhere             anywhere            tcp spts:1020:65535 multiport dports ssh,rsh-spx,EtherNet/IP-1 state NEW 
        0        0 ACCEPT     udp  --  any    any     anywhere             anywhere            udp spts:1024:65535 dpt:ntp state NEW 
        1       76 ACCEPT     udp  --  any    any     anywhere             anywhere            udp spts:0:1023 dpt:ntp state NEW 
        0        0 ACCEPT     udp  --  any    any     anywhere             anywhere            udp spts:1024:65535 dpt:openvpn state NEW 
-      45     2070 LOG        all  --  any    any     anywhere             anywhere            LOG level warning tcp-options ip-options prefix `lan2fire(smtReject): ' 
-      45     2070 smartReject  all  --  any    any     anywhere             anywhere            
+      46     2116 LOG        all  --  any    any     anywhere             anywhere            LOG level warning tcp-options ip-options prefix `lan2fire(smtReject): ' 
+      46     2116 smartReject  all  --  any    any     anywhere             anywhere            
 
 Chain lan2kvm (1 references)
     pkts      bytes target     prot opt in     out     source               destination         
@@ -305,7 +305,7 @@ Chain lan2pub (1 references)
        0        0 ACCEPT     tcp  --  any    any     anywhere             anywhere            tcp spts:1020:65535 dpt:47788 state NEW 
        0        0 ACCEPT     tcp  --  any    any     anywhere             anywhere            tcp spts:1024:65535 dpt:pgpkeyserver state NEW 
        0        0 ACCEPT     tcp  --  any    any     anywhere             anywhere            tcp spts:1024:65535 dpt:ftp state NEW 
-     122     7147 ACCEPT     tcp  --  any    any     anywhere             anywhere            tcp spts:1024:65535 multiport dports http,webcache,irdmi,https,hbci state NEW 
+     124     7259 ACCEPT     tcp  --  any    any     anywhere             anywhere            tcp spts:1024:65535 multiport dports http,webcache,irdmi,https,hbci state NEW 
        0        0 ACCEPT     tcp  --  any    any     anywhere             anywhere            tcp spts:1024:65535 dpt:pcsync-https state NEW 
        0        0 ACCEPT     tcp  --  any    any     anywhere             anywhere            tcp spts:1024:65535 multiport dports xmpp-client,hpvirtgrp state NEW 
        0        0 ACCEPT     tcp  --  any    any     anywhere             anywhere            tcp spts:1024:65535 dpt:nicname state NEW 
@@ -349,22 +349,22 @@ Chain lan2zero (1 references)
 Chain pub2dmz (2 references)
     pkts      bytes target     prot opt in     out     source               destination         
        4      160 ACCEPT     tcp  --  any    any     anywhere             anywhere            tcp spts:1024:65535 multiport dports http,webcache,irdmi,https,hbci state NEW 
-      39     1745 LOG        all  --  any    any     anywhere             anywhere            LOG level warning tcp-options ip-options prefix `pub2dmz(smtReject): ' 
-      39     1745 smartReject  all  --  any    any     anywhere             anywhere            
+      41     1829 LOG        all  --  any    any     anywhere             anywhere            LOG level warning tcp-options ip-options prefix `pub2dmz(smtReject): ' 
+      41     1829 smartReject  all  --  any    any     anywhere             anywhere            
 
 Chain pub2dmzVynet (1 references)
     pkts      bytes target     prot opt in     out     source               destination         
        0        0 ACCEPT     tcp  --  any    any     anywhere             anywhere            tcp spts:1024:65535 multiport dports rtsp,15947 state NEW 
        1       92 ACCEPT     udp  --  any    any     anywhere             anywhere            udp spts:1024:65535 multiport dports 1024:65535,rtsp,15947 state NEW 
-      39     1596 LOG        all  --  any    any     anywhere             anywhere            LOG level warning tcp-options ip-options prefix `pub2dmzVynet(smtReject): ' 
-      39     1596 smartReject  all  --  any    any     anywhere             anywhere            
+      41     1676 LOG        all  --  any    any     anywhere             anywhere            LOG level warning tcp-options ip-options prefix `pub2dmzVynet(smtReject): ' 
+      41     1676 smartReject  all  --  any    any     anywhere             anywhere            
 
 Chain pub2fire (2 references)
     pkts      bytes target     prot opt in     out     source               destination         
        0        0 ACCEPT     udp  --  any    any     anywhere             anywhere            udp spts:filenet-rpc:65535 dpts:traceroute:33523 state NEW 
        0        0 ACCEPT     udp  --  any    any     anywhere             anywhere            udp spts:1024:65535 dpt:openvpn state NEW 
-      37     2034 LOG        all  --  any    any     anywhere             anywhere            LOG level warning tcp-options ip-options prefix `pub2fire(smtReject): ' 
-      37     2034 smartReject  all  --  any    any     anywhere             anywhere            
+      39     2118 LOG        all  --  any    any     anywhere             anywhere            LOG level warning tcp-options ip-options prefix `pub2fire(smtReject): ' 
+      39     2118 smartReject  all  --  any    any     anywhere             anywhere            
 
 Chain pub2fire2 (2 references)
     pkts      bytes target     prot opt in     out     source               destination         
@@ -372,8 +372,8 @@ Chain pub2fire2 (2 references)
        0        0 ACCEPT     udp  --  any    any     anywhere             anywhere            udp spt:isakmp dpt:isakmp state NEW 
        0        0 ACCEPT     udp  --  any    any     anywhere             anywhere            udp spt:ipsec-nat-t dpt:ipsec-nat-t state NEW 
        0        0 ACCEPT     esp  --  any    any     anywhere             anywhere            
-      25     1064 LOG        all  --  any    any     anywhere             anywhere            LOG level warning tcp-options ip-options prefix `pub2fire2(smtReject): ' 
-      25     1064 smartReject  all  --  any    any     anywhere             anywhere            
+      26     1104 LOG        all  --  any    any     anywhere             anywhere            LOG level warning tcp-options ip-options prefix `pub2fire2(smtReject): ' 
+      26     1104 smartReject  all  --  any    any     anywhere             anywhere            
 
 Chain pub2lanI (1 references)
     pkts      bytes target     prot opt in     out     source               destination         
@@ -400,9 +400,9 @@ Chain scanKill (2 references)
 
 Chain smartReject (34 references)
     pkts      bytes target     prot opt in     out     source               destination         
-     268    12973 REJECT     tcp  --  any    any     anywhere             anywhere            reject-with tcp-reset 
-     195    36218 REJECT     udp  --  any    any     anywhere             anywhere            reject-with icmp-port-unreachable 
-       5      200 REJECT     all  --  any    any     anywhere             anywhere            reject-with icmp-proto-unreachable 
+     300    14561 REJECT     tcp  --  any    any     anywhere             anywhere            reject-with tcp-reset 
+     200    37204 REJECT     udp  --  any    any     anywhere             anywhere            reject-with icmp-port-unreachable 
+       6      240 REJECT     all  --  any    any     anywhere             anywhere            reject-with icmp-proto-unreachable 
 
 Chain tun962dmz (1 references)
     pkts      bytes target     prot opt in     out     source               destination         
