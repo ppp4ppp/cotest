@@ -32,6 +32,7 @@ dependencies:
 - hex
 - text
 - free 
+- async
 
 library:
   source-dirs: src
