@@ -26,7 +26,7 @@ instance (Comonad w) => Monad (Co w) where
   (Co ma) >>= f = Co $ \ w -> ma ( w =>> ( \ wb -> \ a -> runCo (f a) wb ) )
   
   
-data Sum f g a = Sum Bool (f a) (g a)
+data Sum f g a = Sum Bool (f a) (g a) deriving (Show)
 
 sum1 (Sum _ f _) = f
 sum2 (Sum _ _ f) = f

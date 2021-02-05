@@ -16,74 +16,55 @@
 
 module Main where
 
-import Foreign.Ptr
-import Foreign.C
-import Foreign.C.Types
-import Data.Word
-import Data.Hex
-import Control.Monad
-
-import qualified Data.Text as T
-
-import Control.Concurrent.Async (race_, race, concurrently)
-import Control.Concurrent (forkIO, threadDelay, ThreadId(..), killThread)
+import Control.Comonad
 
 
+data Stream a = Cons a (Stream a)
 
-import  qualified         Data.ByteString as B
+instance  (Show a ) => Show (Stream a) where
+  show (Cons a1 (Cons a2 (Cons a3 _) )) = (show a1 ) ++ ":<" ++ (show a2 ) ++ ":<" ++ (show a3 )
 
-import qualified Foreign.Marshal.Array as M
-import Foreign.Ptr
-import Foreign.C
-import Foreign.C.String
-import Foreign.Storable
-import qualified Foreign.Marshal.Array as M
-import qualified Foreign.Marshal.Alloc as M
-import Data.Word
+instance Functor Stream where
+  fmap f (Cons a as) = Cons (f a) (fmap f as)
+
+instance Comonad Stream where
+  extract (Cons a _) = a
+  duplicate stream@(Cons a as) = Cons stream (duplicate as)
+
+streama :: Stream String
+streama = Cons "a" streamb
+
+streamb :: Stream String
+streamb = Cons "b" streamc
+
+streamc :: Stream String
+streamc = Cons "c" streama
+
+stream1 :: Stream String
+stream1 = Cons "1" stream2
+
+stream2 :: Stream String
+stream2 = Cons "2" stream3
+
+stream3 :: Stream String
+stream3 = Cons "3" stream1
+
+{-
 
 
-type JpegBuffer = (Ptr CInt , Ptr Int , Ptr Int , Ptr Int , Ptr Word8 , Ptr Word8 , Ptr Word8)
 
-foreign import ccall "mainloop" mainLoop :: Ptr CLong -> CString -> CInt -> Ptr CInt -> Ptr Int -> Ptr Int -> Ptr Int -> Ptr Word8 -> Ptr Word8 -> Ptr Word8 -> IO Int
-foreign import ccall "stope" stopPipe :: Ptr CLong -> IO Int
+-}
 
-
+takeone :: Stream a -> Stream a
+takeone (Cons a s) = s
 
 main = do 
-  (idx, s0, s1, s2, d0, d1, d2) <- mallocnew 
-  cip <- newCString (T.unpack "224.1.1.14")
-  l <- M.malloc
-  l2 <- M.malloc
-  forkIO $ void $ mainLoop l cip 6973 idx s0 s1 s2 d0 d1 d2
-  forkIO $ void $ mainLoop l2 cip 6973 idx s0 s1 s2 d0 d1 d2
-  getLine
-  stopPipe l
-  getLine
-  stopPipe l2
-  forkIO $ void $ mainLoop l cip 6973 idx s0 s1 s2 d0 d1 d2
-  forkIO $ void $ mainLoop l2 cip 6973 idx s0 s1 s2 d0 d1 d2
-  getLine
-  stopPipe l
-  getLine
-  stopPipe l2
-  forkIO $ void $ mainLoop l cip 6973 idx s0 s1 s2 d0 d1 d2
-  forkIO $ void $ mainLoop l2 cip 6973 idx s0 s1 s2 d0 d1 d2
-  getLine
-  stopPipe l
-  getLine
-  stopPipe l2
-  
-  
-  pure ()
+  print ""
+
+{-
+
+a - b - c
 
 
-mallocnew :: IO JpegBuffer
-mallocnew = do
-  a <- M.malloc
-  s0 <- M.malloc
-  s1 <- M.malloc
-  s2 <- M.malloc
-  c <-  M.mallocArray 100000
-  d <-  M.mallocArray 100000
-  e <-  M.mallocArray 100000
-  pure (a, s0, s1, s2, c, d, e)
+
+-}
