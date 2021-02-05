@@ -31,23 +31,34 @@ instance Comonad Stream where
   extract (Cons a _) = a
   duplicate stream@(Cons a as) = Cons stream (duplicate as)
 
-streama :: Stream String
-streama = Cons "a" streamb
+type S = Int -> String
 
-streamb :: Stream String
-streamb = Cons "b" streamc
+streama :: Stream S
+streama = Cons (const "a") streamb
 
-streamc :: Stream String
-streamc = Cons "c" streama
+streamb :: Stream S
+streamb = Cons (const "b") streamc
 
-stream1 :: Stream String
-stream1 = Cons "1" stream2
+streamc :: Stream S
+streamc = Cons (const "c") streama
 
-stream2 :: Stream String
-stream2 = Cons "2" stream3
+stream1 :: Stream S
+stream1 = Cons (const "1") stream2
 
-stream3 :: Stream String
-stream3 = Cons "3" stream1
+stream2 :: Stream S
+stream2 = Cons (const "2") stream3
+
+stream3 :: Stream S
+stream3 = Cons (const "3") stream1
+
+
+loop :: Stream S -> IO ()
+loop s = do
+  i <- getLine >>= (pure . read)
+  f <- pure $ extract s
+  print (f i)
+  loop $ takeone s
+  
 
 {-
 
